@@ -1,0 +1,20 @@
+{
+    "name": "dev/scheduler",
+    "description": "worker flow scheduler center",
+    "type": "project",
+    "authors": [
+        {
+            "name": "linvanda",
+            "email": "1049180458@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-swoole": ">=2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Weiche\\Scheduler\\": "src/"
+        }
+    }
+}
