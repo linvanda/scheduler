@@ -1,12 +1,32 @@
 <?php
 
+use \Weiche\Scheduler\Server;
+use \Weiche\Scheduler\Utils\Config;
+
 /**
- * 入口程序
+ * 命令行执行的入口程序
  */
 
-define('ROOT_PATH', dirname(__FILE__) . '/');
-define('APP_PATH', ROOT_PATH . 'src/');
+// 常量定义
+define('ROOT_PATH', dirname(__FILE__));
+define('APP_PATH', ROOT_PATH . '/src');
+define('DATA_PATH', ROOT_PATH . '/data');
+define('ENV_DEV', 'dev');
+define('ENV_TEST', 'test');
+define('ENV_PREVIEW', 'preview');
+define('ENV_PRODUCTION', 'production');
 
-require(ROOT_PATH . 'vendor/autoload.php');
+require(ROOT_PATH . '/vendor/autoload.php');
 
-$server = new \Weiche\Scheduler\Server();
+// 命令行传参
+$cliOpts = getopt('', ['debug', 'env:']);
+
+if (!($env = $cliOpts['env']) || !in_array(($env = strtolower($env)), [ENV_DEV, ENV_TEST, ENV_PREVIEW, ENV_PRODUCTION])) {
+    echo "请指定环境";
+    exit(1);
+}
+
+// 加载配置文件
+Config::load();
+
+(new Server())->start();

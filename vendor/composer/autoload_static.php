@@ -6,10 +6,25 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
 {
+    public static $files = array (
+        '045cd5d476702c3529ef3e1b9f615e70' => __DIR__ . '/..' . '/swlib/http/src/functions.php',
+        '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => __DIR__ . '/..' . '/swlib/saber/src/include/functions.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
         'W' => 
         array (
             'Weiche\\Scheduler\\' => 17,
+        ),
+        'S' => 
+        array (
+            'Swlib\\Util\\' => 11,
+            'Swlib\\Saber\\' => 12,
+            'Swlib\\Http\\' => 11,
+        ),
+        'P' => 
+        array (
+            'Psr\\Http\\Message\\' => 17,
         ),
     );
 
@@ -18,6 +33,27 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
+        'Swlib\\Util\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/util/src',
+        ),
+        'Swlib\\Saber\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/saber/src',
+        ),
+        'Swlib\\Http\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/http/src',
+        ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+    );
+
+    public static $classMap = array (
+        'Swlib\\Saber' => __DIR__ . '/..' . '/swlib/saber/src/Saber.php',
+        'Swlib\\SaberGM' => __DIR__ . '/..' . '/swlib/saber/src/SaberGM.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -25,6 +61,7 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$classMap;
 
         }, null, ClassLoader::class);
     }

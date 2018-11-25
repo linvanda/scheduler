@@ -3,15 +3,33 @@
 namespace Weiche\Scheduler;
 
 /**
- * 调度服务器
+ * 服务器
  *
  * Class Server
  * @package Weiche\Scheduler
  */
 class Server
 {
-    public function __construct()
+    /**
+     * @var \Swoole\Http\Server
+     */
+    private $httpServer;
+
+    public function __construct($debug = 0)
     {
-        echo "hello server";
+        $this->create($debug);
+    }
+
+    /**
+     * 启动服务
+     */
+    public function start()
+    {
+        return $this->httpServer->start();
+    }
+
+    private function create($debug = 0)
+    {
+        // 加载配置文件
     }
 }

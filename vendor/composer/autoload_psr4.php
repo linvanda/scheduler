@@ -7,4 +7,8 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Weiche\\Scheduler\\' => array($baseDir . '/src'),
+    'Swlib\\Util\\' => array($vendorDir . '/swlib/util/src'),
+    'Swlib\\Saber\\' => array($vendorDir . '/swlib/saber/src'),
+    'Swlib\\Http\\' => array($vendorDir . '/swlib/http/src'),
+    'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),
 );
