@@ -10,5 +10,7 @@ return array(
     'Swlib\\Util\\' => array($vendorDir . '/swlib/util/src'),
     'Swlib\\Saber\\' => array($vendorDir . '/swlib/saber/src'),
     'Swlib\\Http\\' => array($vendorDir . '/swlib/http/src'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),
+    'Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
 );

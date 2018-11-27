@@ -24,7 +24,12 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         ),
         'P' => 
         array (
+            'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
+        ),
+        'M' => 
+        array (
+            'Monolog\\' => 8,
         ),
     );
 
@@ -45,9 +50,17 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             0 => __DIR__ . '/..' . '/swlib/http/src',
         ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Monolog\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
     );
 

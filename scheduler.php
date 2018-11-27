@@ -7,6 +7,8 @@ use \Weiche\Scheduler\Utils\Config;
  * 命令行执行的入口程序
  */
 
+error_reporting(E_ALL ^ E_NOTICE);
+
 // 常量定义
 define('ROOT_PATH', dirname(__FILE__));
 define('APP_PATH', ROOT_PATH . '/src');
@@ -26,7 +28,6 @@ if (!($env = $cliOpts['env']) || !in_array(($env = strtolower($env)), [ENV_DEV, 
     exit(1);
 }
 
-// 加载配置文件
-Config::load();
+define('ENV', $env);
 
-(new Server())->start();
+(new Server(isset($cliOpts['debug']) ? 1 : 0))->start();

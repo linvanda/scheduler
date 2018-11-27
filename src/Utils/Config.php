@@ -13,15 +13,50 @@ class Config
     private static $config;
 
     /**
+     * 初始化配置文件（不包括工作流配置）
+     */
+    public static function init()
+    {
+        if (self::$config) {
+            return;
+        }
+
+        $configPath = APP_PATH . '/Config';
+
+        $commonCfg = include_once($configPath . '/common.php');
+        $envCfg = include_once($configPath . '/' . strtolower(ENV) . '.php');
+
+        // server 的配置特殊处理
+        self::$config['server'] = array_replace($commonCfg['server'], $envCfg['server'] ?: []);
+        unset($commonCfg['server'], $envCfg['server']);
+
+        self::$config += array_replace($commonCfg, $envCfg);
+    }
+
+    /**
      * 获取配置信息（不包括工作流的配置）
+     * 多层次信息用 . 隔开
      *
      * @param string $key
+     * @return mixed|null
      */
-    public static function config($key = '')
+    public static function get($key = '')
     {
         if (!static::$config) {
-            // 解析配置数组
-
+            self::init();
         }
+
+        if (!$key) {
+            return self::$config;
+        }
+
+        $keyNodes = explode('.', $key);
+
+        $cfg = self::$config;
+        foreach ($keyNodes as $node) {
+            $cfg =  is_array($cfg) && array_key_exists($node, $cfg) ? $cfg[$node] : null;
+        }
+
+        return $cfg;
     }
 }
