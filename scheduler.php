@@ -1,7 +1,6 @@
 <?php
 
 use \Weiche\Scheduler\Server;
-use \Weiche\Scheduler\Utils\Config;
 
 /**
  * 命令行执行的入口程序

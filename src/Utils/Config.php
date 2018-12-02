@@ -38,9 +38,10 @@ class Config
      * 多层次信息用 . 隔开
      *
      * @param string $key
+     * @param mixed $default
      * @return mixed|null
      */
-    public static function get($key = '')
+    public static function get($key = '', $default = null)
     {
         if (!static::$config) {
             self::init();
@@ -57,6 +58,6 @@ class Config
             $cfg =  is_array($cfg) && array_key_exists($node, $cfg) ? $cfg[$node] : null;
         }
 
-        return $cfg;
+        return $cfg === null && $default !== null ? $default : $cfg;
     }
 }

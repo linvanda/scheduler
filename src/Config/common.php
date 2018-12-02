@@ -1,12 +1,13 @@
 <?php
 
 return [
+    // server 中的配置都是可以调用 Swoole\Server::set() 设置的
     'server' => [
         'host' => '127.0.0.1',
         'port' => '9876',
-        'worker_num' => 16,
+        'worker_num' => 8,
         // 每个 worker 进程可以创建的最大协程数
-        'max_coroutine' => 4000,
+        'max_coroutine' => 6000,
         'dispatch_mode' => 1,
         // 注意：使用 systemd 管理该服务时，不要设置成 daemonize 模式
         'daemonize' => 1,
@@ -24,6 +25,16 @@ return [
         'reload_async' => true,
         'max_wait_time' => 60,
     ],
+    // 每个进程工作流排队缓冲区大小
+    'workflow_buffer_size' => 1024,
+    // 每个进程最小消费协程数量
+    'min_workflow_coroutine' => 5,
+    // 每个进程最多允许启动多少个协程处理工作流，该值不能大于 server.max_coroutine
+    'max_workflow_coroutine' => 2000,
+    // 当工作流等待队列中等待元素数大于此值时开始增量创建消费者协程
+    'coroutine_create_threshold' => 10,
+    // 增量创建消费者协程时每次创建当数量
+    'coroutine_create_size' => 10,
     'redis' => [
         'host' => '192.168.1.45',
     ],
