@@ -7,7 +7,7 @@ use Swoole\Coroutine as co;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Weiche\Scheduler\Utils\Config;
-use Weiche\Scheduler\Workflow\WorkFlow;
+use Weiche\Scheduler\Workflow\CoroutineWorkFlow;
 use Weiche\Scheduler\Context;
 
 /**
@@ -95,8 +95,12 @@ class Server
 
             // 从工作流队列取出工作流对象并执行
             while (true) {
-                if (($workFlow = Context::instance()->workerFlowQueue()->pop()) instanceof WorkFlow) {
-                    $workFlow->run();
+                if (($workFlow = Context::instance()->workerFlowQueue()->pop()) instanceof CoroutineWorkFlow) {
+                    try {
+                        $workFlow->run();
+                    } catch (\Exception $e) {
+
+                    }
                 } else {
                     break;
                 }
@@ -126,9 +130,7 @@ class Server
                 ) {
                     co::create($customerFunc);
                 }
-            } elseif (
-                $context->workerFlowQueue()->isEmpty()
-            ) {
+            } elseif ($context->workerFlowQueue()->isEmpty()) {
                 // 是否需要清理协程
             }
         });

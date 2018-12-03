@@ -2,6 +2,8 @@
 
 namespace Weiche\Scheduler\Utils;
 
+use Weiche\Scheduler\Exception\FileNotFoundException;
+
 /**
  * 配置解析类
  *
@@ -59,5 +61,27 @@ class Config
         }
 
         return $cfg === null && $default !== null ? $default : $cfg;
+    }
+
+    /**
+     * 加载工作流配置
+     * @param $name
+     * @throws FileNotFoundException
+     * @return array
+     */
+    public static function workflow($name)
+    {
+        static $workflows = [];
+
+        if (!$workflows[$name]) {
+            $file = APP_PATH . "/Config/workflow/{$name}.php";
+            if (!file_exists($file)) {
+                throw new FileNotFoundException("工作流配置文件{$file}不存在");
+            }
+
+            $workflows[$name] = include_once($file);
+        }
+
+        return $workflows[$name];
     }
 }
