@@ -20,9 +20,18 @@ abstract class WorkFlow
     // 工作流最终执行失败
     const STATUS_FAIL = 4;
 
+    // 工作流名称
     protected $name;
+    // 当前状态
     protected $status;
+    // 节点失败重试次数，Node 中可覆盖
+    protected $maxRetryNum;
 
+    /**
+     * WorkFlow constructor.
+     * @param string $name
+     * @throws \Weiche\Scheduler\Exception\FileNotFoundException
+     */
     public function __construct(string $name)
     {
         $this->name = $name;
@@ -75,7 +84,7 @@ abstract class WorkFlow
     {
         $cfg = Config::workflow($name);
 
-        
+        $this->maxRetryNum = $cfg['max_retry_num'] ?: 10;
     }
 
     /**

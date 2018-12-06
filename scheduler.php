@@ -1,6 +1,6 @@
 <?php
 
-use \Weiche\Scheduler\Server;
+use Weiche\Scheduler\Utils\Config;
 
 /**
  * 命令行执行的入口程序
@@ -29,4 +29,7 @@ if (!($env = $cliOpts['env']) || !in_array(($env = strtolower($env)), [ENV_DEV, 
 
 define('ENV', $env);
 
-(new Server(isset($cliOpts['debug']) ? 1 : 0))->start();
+(Config::get('work_type') === 'task' ?
+    new \Weiche\Scheduler\Server\TaskServer(isset($cliOpts['debug']) ? 1 : 0) :
+    new \Weiche\Scheduler\Server\CoroutineServer(isset($cliOpts['debug']) ? 1 : 0)
+)->start();
