@@ -34,16 +34,14 @@ class CoroutineServer extends Server
         $server->tick(5000, function () {
             $context = Context::inst();
 
+            $willCreatNum = min(Config::get('coroutine_create_size'), Config::get('coroutine_max_workflow') - $context->coNum());
             if (
                 $context->workerFlowQueue()->length() >= Config::get('coroutine_create_threshold', 10)
                 && $context->coNum() < Config::get('coroutine_max_workflow')
+                && co::stats()['coroutine_num'] < Config::get('server.max_coroutine') - $willCreatNum
             ) {
                 // 增量创建协程消费者，这些消费者需要设置超时时间，防止出现过多等待协程
-                for (
-                    $i = 0;
-                    $i < min(Config::get('coroutine_create_size'), Config::get('coroutine_max_workflow') - $context->coNum());
-                    $i++
-                ) {
+                for ($i = 0; $i < $willCreatNum; $i++) {
                     co::create((new Guard())->create(Config::get('coroutine_timeout', 60)));
                 }
             }

@@ -8,7 +8,7 @@ namespace Weiche\Scheduler\Handler;
  * Class OneKeyOil
  * @package Weiche\Scheduler\Handler
  */
-class OneKeyOil extends BaseHandler
+class OneKeyOil extends BaseController
 {
 
 }

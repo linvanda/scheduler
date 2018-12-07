@@ -9,17 +9,21 @@ namespace Weiche\Scheduler\Workflow;
  */
 class CoroutineWorkFlow extends WorkFlow
 {
-
-
-    // 节点集合
-    protected $nodes = [];
-    // 当前正在执行的节点
-    protected $currentNode;
-
-    public function __construct(string $name)
+    /**
+     * 执行节点任务
+     * 此处采用贪婪模式，即一次执行尽可能多的节点，每个节点在子协程中单独执行，保证并发性
+     * @return mixed
+     */
+    protected function runNodes()
     {
 
     }
 
+    /**
+     * 获取可以执行的节点
+     */
+    protected function getReadiedNodes()
+    {
 
+    }
 }
