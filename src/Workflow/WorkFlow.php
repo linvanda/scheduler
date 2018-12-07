@@ -2,6 +2,7 @@
 
 namespace Weiche\Scheduler\Workflow;
 
+use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\Exception\ClassNotFoundException;
 use Weiche\Scheduler\Exception\InvalidConfigException;
 use Weiche\Scheduler\Utils\Config;
@@ -26,25 +27,34 @@ abstract class WorkFlow
     protected $name;
     // 当前状态
     protected $status;
-    // 节点失败重试次数，Node 中可覆盖
+    // 节点延迟执行的时间，Node 中可覆盖
+    protected $delay;
+    // 节点失败最大重试次数，Node 中可覆盖
     protected $maxRetryNum;
-    // 节点集合
+    // 最大延迟执行次数
+    protected $maxDelayNum;
+    // 节点集合, node_name => $node
     protected $nodes = [];
-    // 当前正在执行的节点
-    protected $currentNode;
     // 工作流控制器（处理程序）
     protected $controller;
+    /**
+     * 请求原始数据对象
+     * @var Request
+     */
+    protected $request;
 
     /**
      * WorkFlow constructor.
      * @param string $name
+     * @param Request $request
      * @throws ClassNotFoundException
      * @throws InvalidConfigException
      * @throws \Weiche\Scheduler\Exception\FileNotFoundException
      */
-    public function __construct(string $name)
+    public function __construct(string $name, Request $request)
     {
         $this->name = $name;
+        $this->request = $request;
         $this->status = self::STATUS_INIT;
 
         $this->init($name);
@@ -96,6 +106,10 @@ abstract class WorkFlow
     {
         $cfg = Config::workflow($name);
 
+        $cfg['delay'] = $cfg['delay'] ?: 5;
+        $cfg['max_retry_num'] = $cfg['max_retry_num'] ?: 6;
+        $cfg['max_delay_num'] = $cfg['max_delay_num'] ?: 5;
+
         if (!$cfg['controller']) {
             throw new InvalidConfigException("未提供工作流{$name}的controller");
         }
@@ -109,7 +123,9 @@ abstract class WorkFlow
         }
 
         $this->controller = new $cfg['controller']();
-        $this->maxRetryNum = $cfg['max_retry_num'] ?: 10;
+        $this->delay = $cfg['delay'];
+        $this->maxRetryNum = $cfg['max_retry_num'];
+        $this->maxDelayNum = $cfg['max_delay_num'];
 
         $this->initNodes($cfg);
     }
@@ -125,7 +141,11 @@ abstract class WorkFlow
         }
 
         foreach ($cfg['nodes'] as $name => $nodeCfg) {
-            $this->nodes[$name] = new Node($name, $nodeCfg, $cfg);
+            $nodeCfg['delay'] = $nodeCfg['delay'] ?: $cfg['delay'];
+            $nodeCfg['max_retry_num'] = $nodeCfg['max_retry_num'] ?: $cfg['max_retry_num'];
+            $nodeCfg['max_delay_num'] = $nodeCfg['max_delay_num'] ?: $cfg['max_delay_num'];
+
+            $this->nodes[$name] = new Node($name, $nodeCfg);
         }
     }
 

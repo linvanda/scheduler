@@ -6,8 +6,11 @@ use Weiche\Scheduler\Handler\OneKeyOil;
  * 一键加油工作流模板
  */
 return [
-    // 节点失败重试次数
-    'max_retry_num' => 5,
+    // 失败重试次数，节点可覆盖。不超过10
+    // 次数与时间的关系：[1 => 5, 2 => 15, 3 => 30, 4 => 180, 5 => 600, 6 => 1800, 7 => 3600, 8 => 10800, 9 => 18000, 10 => 36000]
+    'max_retry_num' => 6,
+    // 最多允许延迟执行多少次，可被节点配置覆盖
+    'max_delay_num' => 5,
     // 当节点需要延迟执行时，延迟的秒数，可在节点配置中覆盖
     'delay' => 5,
     // 处理程序类名
@@ -17,9 +20,11 @@ return [
         'step1' =>[
             // 处理程序 action，默认同 name
             'action' => 'step1',
+            'max_retry_num' => 3,
         ],
         'step2' => [
             'action' => 'step222',
+            'max_delay_num' => 3,
         ],
         'step3' => [
             // 节点执行的前置条件，多个条件是 and 的关系
