@@ -142,25 +142,4 @@ class CContext
         $this->coWaitNum--;
         $this->coBusyNum++;
     }
-
-    /**
-     * 清理等待队列上的多余协程
-     * @param int $remainNum
-     */
-    public function cleanWaitedCo($remainNum = 300)
-    {
-        if (!isset($remainNum) || $remainNum < 0) {
-            $remainNum = 0;
-        }
-
-        foreach ($this->coStatus as $cuid => $status) {
-            if ($status === self::CO_STATUS_WAIT) {
-                $this->removeCo($cuid);
-
-                if ($this->coWaitNum <= $remainNum) {
-                    break;
-                }
-            }
-        }
-    }
 }

@@ -25,30 +25,27 @@ class CoroutineServer extends Server
      */
     public function onWorkerStart(HttpServer $server, $workerId)
     {
-        // 初始化消费端协程
+        // 初始化消费端协程(基础消费者协程)
         for ($i = 0; $i < Config::get('coroutine_min_workflow', 5); $i++) {
-            co::create([new Guard(), 'run']);
+            co::create((new Guard())->create());
         }
 
         // 定时检查工作流队列情况，如果满了，则创建额外的消费端协程
-        $server->tick(1000, function () {
+        $server->tick(5000, function () {
             $context = Context::inst();
 
             if (
                 $context->workerFlowQueue()->length() >= Config::get('coroutine_create_threshold', 10)
                 && $context->coNum() < Config::get('coroutine_max_workflow')
             ) {
-                // 增量创建协程
+                // 增量创建协程消费者，这些消费者需要设置超时时间，防止出现过多等待协程
                 for (
                     $i = 0;
                     $i < min(Config::get('coroutine_create_size'), Config::get('coroutine_max_workflow') - $context->coNum());
                     $i++
                 ) {
-                    co::create([new Guard(), 'run']);
+                    co::create((new Guard())->create(Config::get('coroutine_timeout', 60)));
                 }
-            } elseif ($context->workerFlowQueue()->stats()['consumer_num'] > Config::get('coroutine_wait_size', 300)) {
-                // 清理多余的协程
-                $context->cleanWaitedCo(Config::get('coroutine_wait_size', 300));
             }
         });
     }

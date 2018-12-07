@@ -39,6 +39,8 @@ return [
     'coroutine_create_size' => 10,
     // 最多有多少消费端协程等待队列，当超过该值时，进行协程清理
     'coroutine_wait_size' => 300,
+    // 消费者协程等待超时时间
+    'coroutine_timeout' => 60,
     '' => '',
     'redis' => [
         'host' => '192.168.1.45',

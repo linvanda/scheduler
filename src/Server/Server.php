@@ -65,6 +65,7 @@ abstract class Server
         $server->on('request', [$this, 'onRequest']);
         $server->on('workerStart', [$this, 'onWorkerStart']);
         $server->on('workerStop', [$this, 'onWorkerStop']);
+        $server->on('workerError', [$this, 'onWorkerError']);
 
         $this->httpServer = $server;
     }
@@ -77,6 +78,11 @@ abstract class Server
     {
         // mac 上不支持设置进程名称
         @swoole_set_process_name('scheduler master process');
+    }
+
+    public function onWorkerError(HttpServer $server)
+    {
+        // 记录错误日志
     }
 
     /**
