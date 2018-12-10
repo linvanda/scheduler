@@ -141,12 +141,67 @@ abstract class WorkFlow
         }
 
         foreach ($cfg['nodes'] as $name => $nodeCfg) {
+            if (is_int($name) && is_string($nodeCfg)) {
+                $name = $nodeCfg;
+                $nodeCfg = [];
+            }
+
             $nodeCfg['delay'] = $nodeCfg['delay'] ?: $cfg['delay'];
             $nodeCfg['max_retry_num'] = $nodeCfg['max_retry_num'] ?: $cfg['max_retry_num'];
             $nodeCfg['max_delay_num'] = $nodeCfg['max_delay_num'] ?: $cfg['max_delay_num'];
 
             $this->nodes[$name] = new Node($name, $nodeCfg);
         }
+    }
+
+    /**
+     * 节点是否可执行: 处于可执行态、未sleep、前置节点已就绪
+     * 注意：前置节点处于delay、retry态时属于"中间态"，不会进入后置节点执行（因为其最终状态是不确定的）
+     * @param Node $node
+     * @return bool
+     * @throws InvalidConfigException
+     */
+    protected function canNodeExec(Node $node)
+    {
+        // 正在执行或者已执行完成或者sleep 中的节点不可执行
+        if ($node->isFinished() || $node->isExecuting() || $node->isSleep()) {
+            return false;
+        }
+
+        // 前置节点是否满足条件，有一个不满足则不满足
+        if ($conditions = $node->conditions()) {
+            foreach ($conditions as $preNodeName => $preResponseCode) {
+                if (!($preNode = $this->nodes[$preNodeName])) {
+                    throw new InvalidConfigException("前置节点不存在：{$preNodeName}");
+                }
+
+                // 前置节点没执行完成，本节点不可执行
+                if (!$preNode->isFinished()) {
+                    return false;
+                }
+
+                if ($preResponseCode) {
+                    if (is_string($preResponseCode) && strpos($preNode->response()->getCode(), rtrim($preResponseCode, '*')) !== 0) {
+                        return false;
+                    } elseif (is_array($preResponseCode) && !in_array($preNode->response()->getCode(), $preResponseCode)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 获取前置节点的响应数据
+     * 基于配置 conditions
+     * @param Node $node
+     * @return array
+     */
+    protected function getPrevNodeResponse(Node $node)
+    {
+        return [];
     }
 
     /**

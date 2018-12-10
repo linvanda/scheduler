@@ -108,25 +108,48 @@ class Node
     }
 
     /**
-     * 节点是否 awake 态（被 delay 的或 retry 的且未到时间则处于 sleep 态）
+     * 节点前置条件配置
+     * @return array
+     */
+    public function conditions()
+    {
+        return $this->conditions;
+    }
+
+    /**
+     * 节点是否 sleep 态（被 delay 的或 retry 的且未到时间）
      * @return bool
      */
-    public function isAwake()
+    public function isSleep()
     {
-        if (!in_array($this->status, [self::STATUS_DELAY, self::STATUS_RETRY])) {
-            return true;
-        }
-
         $now = time();
 
         if (
-            $this->status === self::STATUS_DELAY && $this->delayTo >= $now &&
-            $this->status === self::STATUS_RETRY && $this->retryAt >= $now
+            $this->status === self::STATUS_DELAY && $this->delayTo > $now ||
+            $this->status === self::STATUS_RETRY && $this->retryAt > $now
         ) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * 节点是否处于完成态（执行成功或失败）
+     * 非完成态：初始态、进行中、延迟中、待重试
+     */
+    public function isFinished()
+    {
+        return $this->status === self::STATUS_SUC || $this->status === self::STATUS_FAIL;
+    }
+
+    /**
+     * 节点是否正在执行
+     * @return bool
+     */
+    public function isExecuting()
+    {
+        return $this->status === self::STATUS_DOING;
     }
 
     /**
@@ -191,13 +214,24 @@ class Node
     protected function init(array $nodeCfg)
     {
         $this->action = $nodeCfg['action'] ?: $this->name;
-
-        if ($nodeCfg['conditions']) {
-            $this->conditions = $nodeCfg['conditions'];
-        }
-
+        $this->conditions = $this->formatConditions($nodeCfg['conditions']);
         $this->delay = $nodeCfg['delay'] ?: 5;
         $this->maxRetryNum = $nodeCfg['max_retry_num'] ?: 6;
         $this->maxDelayNum = $nodeCfg['max_delay_num'] ?: 5;
+    }
+
+    protected function formatConditions($conditions)
+    {
+        if (!$conditions) {
+            return [];
+        }
+
+        foreach ($conditions as $nodeName => &$code) {
+            if (is_int($code) && $code > 0) {
+                $code = [$code];
+            }
+        }
+
+        return $conditions;
     }
 }
