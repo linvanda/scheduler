@@ -15,6 +15,7 @@ class CoroutineWorkFlow extends WorkFlow
      * 执行节点任务
      * 此处采用贪婪模式，即一次执行尽可能多的节点，每个节点在子协程中单独执行，保证并发性
      * @return mixed
+     * @throws \Weiche\Scheduler\Exception\InvalidConfigException
      */
     protected function runNodes()
     {

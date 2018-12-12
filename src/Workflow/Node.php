@@ -98,6 +98,11 @@ class Node
         return $this->response;
     }
 
+    public function name()
+    {
+        return $this->name;
+    }
+
     /**
      * 节点状态
      * @return int
@@ -150,6 +155,60 @@ class Node
     public function isExecuting()
     {
         return $this->status === self::STATUS_DOING;
+    }
+
+    /**
+     * 节点是否处于执行态：正在执行、延迟执行或失败待重试
+     */
+    public function isExecute()
+    {
+        return in_array($this->status, [self::STATUS_DOING, self::STATUS_DELAY, self::STATUS_RETRY]);
+    }
+
+    public function isSuc()
+    {
+        return $this->status === self::STATUS_SUC;
+    }
+
+    public function isFail()
+    {
+        return $this->status === self::STATUS_FAIL;
+    }
+
+    /**
+     * 节点是否会被某个节点阻塞
+     * @param Node $blockNode
+     * @return bool
+     */
+    public function willBeBlocked(Node $blockNode)
+    {
+        if ($this->name == $blockNode->name()) {
+            return false;
+        }
+
+        $preResponseCode = $this->conditions[$blockNode->name()];
+
+        if ($preResponseCode === null) {
+            return false;
+        }
+
+        // 未完成的节点一定阻塞后续节点
+        if (!$blockNode->isFinished()) {
+            return true;
+        }
+
+        if ($preResponseCode) {
+            $preCode = $blockNode->response()->getCode();
+            if (is_string($preResponseCode) && strpos($preCode, rtrim($preResponseCode, '*')) !== 0) {
+                return true;
+            } elseif (is_array($preResponseCode) && !in_array($preCode, $preResponseCode)) {
+                return true;
+            } elseif ($preCode != $preResponseCode) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -214,24 +273,9 @@ class Node
     protected function init(array $nodeCfg)
     {
         $this->action = $nodeCfg['action'] ?: $this->name;
-        $this->conditions = $this->formatConditions($nodeCfg['conditions']);
+        $this->conditions = $nodeCfg['conditions'] ?: [];
         $this->delay = $nodeCfg['delay'] ?: 5;
         $this->maxRetryNum = $nodeCfg['max_retry_num'] ?: 6;
         $this->maxDelayNum = $nodeCfg['max_delay_num'] ?: 5;
-    }
-
-    protected function formatConditions($conditions)
-    {
-        if (!$conditions) {
-            return [];
-        }
-
-        foreach ($conditions as $nodeName => &$code) {
-            if (is_int($code) && $code > 0) {
-                $code = [$code];
-            }
-        }
-
-        return $conditions;
     }
 }

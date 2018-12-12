@@ -5,6 +5,8 @@ namespace Weiche\Scheduler\Workflow;
 use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\Exception\ClassNotFoundException;
 use Weiche\Scheduler\Exception\InvalidConfigException;
+use Weiche\Scheduler\Exception\RunException;
+use Weiche\Scheduler\Exception\WorkFlowException;
 use Weiche\Scheduler\Utils\Config;
 
 /**
@@ -18,15 +20,21 @@ abstract class WorkFlow
     const STATUS_INIT = 1;
     // 节点执行中
     const STATUS_DOING = 2;
+    // 等待下一次执行
+    const STATUS_WAIT = 3;
     // 工作流最终执行成功
-    const STATUS_SUC = 3;
+    const STATUS_SUC = 4;
     // 工作流最终执行失败
-    const STATUS_FAIL = 4;
+    const STATUS_FAIL = 5;
+    // 工作流最大执行次数，主要防止某些意外导致工作流永远无法结束
+    const MAX_EXEC_NUM = 1000;
 
     // 工作流名称
     protected $name;
     // 当前状态
     protected $status;
+
+    protected $ttl;
     // 节点延迟执行的时间，Node 中可覆盖
     protected $delay;
     // 节点失败最大重试次数，Node 中可覆盖
@@ -56,20 +64,26 @@ abstract class WorkFlow
         $this->name = $name;
         $this->request = $request;
         $this->status = self::STATUS_INIT;
+        $this->ttl = self::MAX_EXEC_NUM;
 
         $this->init($name);
     }
 
     /**
      * 执行工作流
+     * @throws WorkFlowException
      */
     public function run()
     {
-        if ($this->pre()) {
-            $this->runNodes();
-        }
-
+        $this->pre();
+        // 执行具体的节点，此方法由子类具体实现
+        $this->runNodes();
         $this->post();
+    }
+
+    public function name()
+    {
+        return $this->name;
     }
 
     public function status()
@@ -78,21 +92,78 @@ abstract class WorkFlow
     }
 
     /**
-     * 执行前的钩子，如果返回 false 则不会执行真正的工作流节点
-     * @return bool
+     * 执行前，如果返回 false 则不会执行真正的工作流节点
+     * @throws WorkFlowException
      */
     protected function pre()
     {
-        // 子类可以覆盖
-        return true;
+        if ($this->ttl <= 0) {
+            throw new WorkFlowException("工作流{$this->name} ttl 已用完，无法继续执行");
+        }
+
+        $this->status = self::STATUS_DOING;
     }
 
     /**
-     * 执行后的钩子
+     * 执行后
      */
     protected function post()
     {
-        // 子类可以覆盖
+        $this->ttl--;
+
+        $this->status = $this->calcStatus();
+    }
+
+    /**
+     * 根据节点执行情况确定当前工作流状态：
+     *  如果有一个节点处于执行状态，则工作流未完成
+     *  如果所有节点都执行成功，则工作流结束，执行成功
+     *  如果至少有一个节点执行失败，且后续工作流都依赖于这些失败的工作流而导致后续工作流都无法执行，则工作流结束，执行失败
+     *  如果至少有一个节点执行失败，其它节点都执行成功，则工作流结束，执行失败
+     * @return int
+     */
+    protected function calcStatus()
+    {
+        $failList = $initList = [];
+        foreach ($this->nodes as $node) {
+            // 只要有一个节点处于执行态，则工作流得等待继续执行
+            if ($node->isExecute()) {
+                return self::STATUS_WAIT;
+            }
+
+            if ($node->isSuc()) {
+                continue;
+            }
+
+            // 节点执行失败或没有执行
+            if ($node->isFail()) {
+                $failList[] = $node;
+            } else {
+                $initList[] = $node;
+            }
+        }
+
+        if (!$failList && !$initList) {
+            return self::STATUS_SUC;
+        }
+
+        // 有失败的节点，没有未执行的节点，工作流结束：失败
+        if ($failList && !$initList) {
+            return self::STATUS_FAIL;
+        }
+
+        // 如果有节点失败了，则将 $initList 中受影响的节点剔除
+        if ($failList) {
+            foreach ($failList as $failNode) {
+                $this->excludeBlockedNodes($initList, $failNode);
+            }
+
+            if (!$initList) {
+                return self::STATUS_FAIL;
+            }
+        }
+
+        return self::STATUS_WAIT;
     }
 
     /**
@@ -104,23 +175,9 @@ abstract class WorkFlow
      */
     protected function init(string $name)
     {
-        $cfg = Config::workflow($name);
+        $cfg = $this->normalizeConfig(Config::workflow($name));
 
-        $cfg['delay'] = $cfg['delay'] ?: 5;
-        $cfg['max_retry_num'] = $cfg['max_retry_num'] ?: 6;
-        $cfg['max_delay_num'] = $cfg['max_delay_num'] ?: 5;
-
-        if (!$cfg['controller']) {
-            throw new InvalidConfigException("未提供工作流{$name}的controller");
-        }
-
-        if (!$cfg['nodes']) {
-            throw new InvalidConfigException("未提供工作流{$name}的nodes");
-        }
-
-        if (!class_exists($cfg['controller'])) {
-            throw new ClassNotFoundException("类{$cfg['controller']}不存在");
-        }
+        $this->validateConfig($cfg);
 
         $this->controller = new $cfg['controller']();
         $this->delay = $cfg['delay'];
@@ -141,11 +198,6 @@ abstract class WorkFlow
         }
 
         foreach ($cfg['nodes'] as $name => $nodeCfg) {
-            if (is_int($name) && is_string($nodeCfg)) {
-                $name = $nodeCfg;
-                $nodeCfg = [];
-            }
-
             $nodeCfg['delay'] = $nodeCfg['delay'] ?: $cfg['delay'];
             $nodeCfg['max_retry_num'] = $nodeCfg['max_retry_num'] ?: $cfg['max_retry_num'];
             $nodeCfg['max_delay_num'] = $nodeCfg['max_delay_num'] ?: $cfg['max_delay_num'];
@@ -170,22 +222,13 @@ abstract class WorkFlow
 
         // 前置节点是否满足条件，有一个不满足则不满足
         if ($conditions = $node->conditions()) {
-            foreach ($conditions as $preNodeName => $preResponseCode) {
+            foreach (array_keys($conditions) as $preNodeName) {
                 if (!($preNode = $this->nodes[$preNodeName])) {
                     throw new InvalidConfigException("前置节点不存在：{$preNodeName}");
                 }
 
-                // 前置节点没执行完成，本节点不可执行
-                if (!$preNode->isFinished()) {
+                if ($node->willBeBlocked($preNode)) {
                     return false;
-                }
-
-                if ($preResponseCode) {
-                    if (is_string($preResponseCode) && strpos($preNode->response()->getCode(), rtrim($preResponseCode, '*')) !== 0) {
-                        return false;
-                    } elseif (is_array($preResponseCode) && !in_array($preNode->response()->getCode(), $preResponseCode)) {
-                        return false;
-                    }
                 }
             }
         }
@@ -198,10 +241,150 @@ abstract class WorkFlow
      * 基于配置 conditions
      * @param Node $node
      * @return array
+     * @throws InvalidConfigException
+     * @throws RunException
      */
     protected function getPrevNodeResponse(Node $node)
     {
-        return [];
+        if (!($conditions = $node->conditions())) {
+            return [];
+        }
+
+        $preResponse = [];
+        foreach (array_keys($conditions) as $preNodeName) {
+            if (!array_key_exists($preNodeName, $this->nodes)) {
+                throw new InvalidConfigException("工作流{$this->name}节点{$preNodeName}不存在");
+            }
+
+            if (!$this->nodes[$preNodeName]->response()) {
+                throw new RunException("工作流{$this->name}节点{$node->name()}的前置节点{$this->nodes[$preNodeName]}没有返回值");
+            }
+
+            $preResponse[$preNodeName] = $this->nodes[$preNodeName]->response();
+        }
+
+        return $preResponse;
+    }
+
+    /**
+     * 从 $nodeList 中剔除受到 $blockNode 影响而无法执行的节点
+     * @param array $nodeList
+     * @param Node $blockNode
+     */
+    private function excludeBlockedNodes(&$nodeList, Node $blockNode)
+    {
+        static $tick = 0;
+
+        if (!$nodeList || !$blockNode) {
+            return;
+        }
+
+        // 调用深度控制，防止因循环依赖而导致无限调用
+        if ($tick++ > 100) {
+            return;
+        }
+
+        foreach ($nodeList as $key => $node) {
+            if ($node->willBeBlocked($blockNode)) {
+                // 被阻塞，移除并递归校验
+                unset($nodeList[$key]);
+                $this->excludeBlockedNodes($nodeList, $node);
+            }
+        }
+    }
+
+    /**
+     * @param array $cfg
+     * @return array
+     * @throws InvalidConfigException
+     */
+    private function normalizeConfig(array $cfg)
+    {
+        if (!$cfg) {
+            throw new InvalidConfigException("工作流{$this->name}没有有效的配置文件");
+        }
+
+        $cfg['delay'] = $cfg['delay'] ?: 5;
+        $cfg['max_retry_num'] = $cfg['max_retry_num'] ?: 6;
+        $cfg['max_delay_num'] = $cfg['max_delay_num'] ?: 5;
+
+        foreach ($cfg['nodes'] as $nodeName => $nodeCfg) {
+            if (is_int($nodeName) && is_string($nodeCfg)) {
+                $cfg['nodes'][$nodeCfg] = [];
+                unset($cfg['nodes'][$nodeName]);
+            }
+        }
+
+        return $cfg;
+    }
+
+    /**
+     * @param array $cfg
+     * @throws ClassNotFoundException
+     * @throws InvalidConfigException
+     */
+    private function validateConfig(array $cfg)
+    {
+        if (!$cfg['controller']) {
+            throw new InvalidConfigException("未提供工作流{$this->name}的controller");
+        }
+
+        if (!$cfg['nodes']) {
+            throw new InvalidConfigException("未提供工作流{$this->name}的nodes");
+        }
+
+        if (!class_exists($cfg['controller'])) {
+            throw new ClassNotFoundException("类{$cfg['controller']}不存在");
+        }
+
+        if ($this->hasLoopDependence($cfg)) {
+            throw new InvalidConfigException("工作流{$this->name}的nodes存在循环依赖");
+        }
+    }
+
+    /**
+     * 节点循环依赖检测
+     * @param array $cfg
+     * @return bool
+     */
+    private function hasLoopDependence(array $cfg)
+    {
+        $dependences = array_map(function ($item) {
+            return $item['conditions'] ? array_keys($item['conditions']) : [];
+        }, $cfg['nodes']);
+
+        foreach (array_keys($dependences) as $nodeName) {
+            if ($this->isLoopDepend($nodeName, $dependences)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isLoopDepend($startName, $dependList, $findName = null)
+    {
+        if (!$findName) {
+            $findName = $startName;
+        }
+
+        $startList = $dependList[$startName];
+
+        if (!$startList) {
+            return 0;
+        }
+
+        $has = 0;
+        foreach ($startList as $dependItem) {
+            if ($dependItem == $findName) {
+                return 1;
+            }
+
+            // 继续查找
+            $has |= isLoopDepend($dependItem, $dependList, $findName);
+        }
+
+        return $has;
     }
 
     /**
