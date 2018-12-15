@@ -3,6 +3,7 @@
 namespace Weiche\Scheduler\Workflow;
 
 use Weiche\Scheduler\Controller\Controller;
+use Weiche\Scheduler\DTO\FatalResponse;
 use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\DTO\Response;
 use Weiche\Scheduler\Exception\HandlerException;
@@ -71,22 +72,15 @@ class Node
      * @param Controller $controller
      * @param Request $request
      * @param array $prevResponse
-     * @return mixed
      * @throws InvalidResponseException
-     * @throws HandlerException
+     * @throws \Weiche\Scheduler\Exception\InvalidCallException
      */
     public function run(Controller $controller, Request $request, array $prevResponse = [])
     {
         $this->pre();
-
-        try {
-            // 启动控制器
-            $this->response = $controller->handler($this->action, $request, $prevResponse);
-        } catch (\Exception $e) {
-            throw new HandlerException($e->getMessage(), $e->getCode());
-        } finally {
-            $this->post();
-        }
+        // 启动控制器
+        $this->response = $controller->handler($this->action, $request, $prevResponse);
+        $this->post();
     }
 
     /**
@@ -216,6 +210,8 @@ class Node
      */
     protected function pre()
     {
+        $this->response = null;
+
         // 如果是失败重试或延迟执行，则将相关次数加1
         if ($this->status === self::STATUS_RETRY) {
             $this->retriedNum++;
@@ -232,6 +228,10 @@ class Node
      */
     protected function post()
     {
+        if (!$this->response) {
+            return;
+        }
+
         // 根据 response 更新节点状态
         switch (intval(substr($this->response->getCode(), 0, 1))) {
             case 2:

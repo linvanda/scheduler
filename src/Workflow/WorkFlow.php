@@ -92,7 +92,7 @@ abstract class WorkFlow
     }
 
     /**
-     * 执行前，如果返回 false 则不会执行真正的工作流节点
+     * 执行前
      * @throws WorkFlowException
      */
     protected function pre()
@@ -202,8 +202,19 @@ abstract class WorkFlow
             $nodeCfg['max_retry_num'] = $nodeCfg['max_retry_num'] ?: $cfg['max_retry_num'];
             $nodeCfg['max_delay_num'] = $nodeCfg['max_delay_num'] ?: $cfg['max_delay_num'];
 
-            $this->nodes[$name] = new Node($name, $nodeCfg);
+            $this->nodes[$name] = $this->createNode($name, $nodeCfg);
         }
+    }
+
+    /**
+     * 子类可以重写以决定使用什么 Node
+     * @param $name
+     * @param $nodeCfg
+     * @return Node
+     */
+    protected function createNode($name, $nodeCfg)
+    {
+        return new Node($name, $nodeCfg);
     }
 
     /**
@@ -381,7 +392,7 @@ abstract class WorkFlow
             }
 
             // 继续查找
-            $has |= isLoopDepend($dependItem, $dependList, $findName);
+            $has |= $this->isLoopDepend($dependItem, $dependList, $findName);
         }
 
         return $has;

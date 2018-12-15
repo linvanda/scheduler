@@ -28,4 +28,9 @@ class CoroutineWorkFlow extends WorkFlow
             }
         }
     }
+
+    protected function createNode($name, $nodeCfg)
+    {
+        return new CoroutineNode($name, $nodeCfg);
+    }
 }

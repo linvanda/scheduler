@@ -10,6 +10,8 @@ use Weiche\Scheduler\Exception\InvalidContextException;
 /**
  * 工作流队列守卫，负责从队列中取出工作流并执行
  * 该层负责工作流启动、处理工作流返回信息、日志上报、持久化等任务
+ * Guard 不能向外抛异常，否则整个进程会退出
+ *
  * Class Guard
  * @package Weiche\Scheduler\Server\Coroutine
  */
@@ -39,11 +41,13 @@ class Guard
                     try {
                         $this->pre();
                         $workFlow->run();
+
                     } catch (\Exception $e) {
+                        //TODO 记录异常日志
 
+                    } finally {
+                        $this->post();
                     }
-
-                    $this->post();
                 } else {
                     break;
                 }

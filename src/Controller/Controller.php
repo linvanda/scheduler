@@ -2,12 +2,18 @@
 
 namespace Weiche\Scheduler\Controller;
 
+use Weiche\Scheduler\DTO\DelayResponse;
+use Weiche\Scheduler\DTO\FailResponse;
+use Weiche\Scheduler\DTO\FatalResponse;
+use Weiche\Scheduler\DTO\OkResponse;
 use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\DTO\Response;
 use Weiche\Scheduler\Exception\InvalidCallException;
 
 /**
- * 工作流处理程序基类
+ * 工作流处理程序（控制器）基类
+ * 注意：如果控制器对外抛出任何异常，则该节点会执行失败，不会被重试，但不会影响其它不相干节点的执行
+ * 如果需要重试，控制器需要返回相关 Response 对象(或者对应的数组格式)
  *
  * Class Controller
  * @package Weiche\Scheduler\Controller
@@ -31,6 +37,13 @@ class Controller
 
         $this->pre($actionName, $request, $prevResponses);
         $response = $this->$actionName($request, $prevResponses);
+
+        if (!$response) {
+            $response = new FatalResponse([], "处理程序未返回任何结果");
+        } elseif (is_array($response)) {
+            $response = $this->arrayToResponse($response);
+        }
+
         $this->post($actionName, $request, $prevResponses, $response);
 
         return $response;
@@ -58,5 +71,33 @@ class Controller
     protected function post(string $actionName, Request $request, array $prevResponses = [], Response $response = null)
     {
         //TODO
+    }
+
+    /**
+     * 数组转响应对象
+     * @param array $arr 格式：['code' => 200, 'msg' => '', 'data' => []]
+     * @return Response
+     */
+    protected function arrayToResponse($arr)
+    {
+        if (!$arr || !$arr['code']) {
+            return new FatalResponse([], "非法的返回结果：" . print_r($arr, true));
+        }
+
+        $arr['msg'] = $arr['msg'] ?? '';
+        $arr['data'] = $arr['data'] ?? [];
+
+        switch ($arr['code']) {
+            case Response::CODE_OK:
+                return new OkResponse($arr['data'], $arr['msg']);
+            case Response::CODE_DELAY:
+                return new DelayResponse($arr['data'], $arr['msg']);
+            case Response::CODE_FAIL:
+                return new FailResponse($arr['data'], $arr['msg']);
+            case Response::CODE_FATAL:
+                return new FatalResponse($arr['data'], $arr['msg']);
+            default:
+                return new Response($arr['code'], $arr['data'], $arr['msg']);
+        }
     }
 }
