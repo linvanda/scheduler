@@ -12,25 +12,13 @@ use Swoole\Coroutine as co;
 class CoroutineWorkFlow extends WorkFlow
 {
     /**
-     * 执行节点任务
-     * 此处采用贪婪模式，即一次执行尽可能多的节点，每个节点在子协程中单独执行，保证并发性
-     * @return mixed
-     * @throws \Weiche\Scheduler\Exception\InvalidConfigException
+     * 在独立的协程中执行自节点
+     * @param Node $node
      */
-    protected function runNodes()
+    protected function runNode(Node $node)
     {
-        foreach ($this->nodes as $node) {
-            if ($this->canNodeExec($node)) {
-                // 在子协程中执行
-                co::create(function () use ($node) {
-                    $node->run($this->controller, $this->request, $this->getPrevNodeResponse($node));
-                });
-            }
-        }
-    }
-
-    protected function createNode($name, $nodeCfg)
-    {
-        return new CoroutineNode($name, $nodeCfg);
+        co::create(function () use ($node) {
+            $node->run($this->controller, $this->request, $this->getPrevNodeResponse($node));
+        });
     }
 }

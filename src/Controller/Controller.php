@@ -14,6 +14,7 @@ use Weiche\Scheduler\Exception\InvalidCallException;
  * 工作流处理程序（控制器）基类
  * 注意：如果控制器对外抛出任何异常，则该节点会执行失败，不会被重试，但不会影响其它不相干节点的执行
  * 如果需要重试，控制器需要返回相关 Response 对象(或者对应的数组格式)
+ * 正常情况下，控制器不应该再对外抛出异常，应当将内部异常转化为相应的 Response
  *
  * Class Controller
  * @package Weiche\Scheduler\Controller

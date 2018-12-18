@@ -6,11 +6,12 @@ use \Swoole\Coroutine as co;
 use Weiche\Scheduler\Context\CContext as Context;
 use Weiche\Scheduler\Workflow\CoroutineWorkFlow;
 use Weiche\Scheduler\Exception\InvalidContextException;
+use Weiche\Scheduler\Workflow\WorkFlow;
 
 /**
  * 工作流队列守卫，负责从队列中取出工作流并执行
  * 该层负责工作流启动、处理工作流返回信息、日志上报、持久化等任务
- * Guard 不能向外抛异常，否则整个进程会退出
+ * Guard 不能向外抛异常，否则整个进程会退出，必须捕获内部抛出的所有异常
  *
  * Class Guard
  * @package Weiche\Scheduler\Server\Coroutine
@@ -35,19 +36,12 @@ class Guard
                 });
             }
 
-            // 从工作流队列取出工作流对象并执行
+            /**
+             * 从工作流队列取出工作流对象并执行
+             */
             while (true) {
                 if (($workFlow = Context::inst()->workerFlowQueue()->pop()) instanceof CoroutineWorkFlow) {
-                    try {
-                        $this->pre();
-                        $workFlow->run();
-
-                    } catch (\Exception $e) {
-                        //TODO 记录异常日志
-
-                    } finally {
-                        $this->post();
-                    }
+                    $this->run($workFlow);
                 } else {
                     break;
                 }
@@ -57,6 +51,19 @@ class Guard
                 $this->destroy();
             }
         };
+    }
+
+    private function run(WorkFlow $workFlow)
+    {
+        try {
+            $this->pre();
+            $workFlow->run();
+        } catch (\Exception $e) {
+            //TODO 记录异常日志，并停止该工作流的执行
+            $workFlow->fail();
+        } finally {
+            $this->post($workFlow);
+        }
     }
 
     /**
@@ -86,11 +93,23 @@ class Guard
 
     /**
      * 协程业务执行完成后的钩子
+     * @param WorkFlow $workFlow
      */
-    private function post()
+    private function post(WorkFlow $workFlow)
     {
-        // 状态改成闲
+        // 协程状态改成闲
         Context::inst()->switchCoToWait($this->cuid);
+
+        // 根据工作流的状态决定是立即执行下阶段、延迟加入到队列中还是结束
+        if ($workFlow->willContinue()) {
+            if ($nextTime = $workFlow->nextExecTime()) {
+                swoole_timer_after($nextTime * 1000, function () use ($workFlow) {
+                    Context::inst()->workerFlowQueue()->push($workFlow);
+                });
+            } else {
+                $this->run($workFlow);
+            }
+        }
     }
 
     /**

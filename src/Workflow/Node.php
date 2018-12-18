@@ -6,7 +6,6 @@ use Weiche\Scheduler\Controller\Controller;
 use Weiche\Scheduler\DTO\FatalResponse;
 use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\DTO\Response;
-use Weiche\Scheduler\Exception\HandlerException;
 use Weiche\Scheduler\Exception\InvalidResponseException;
 
 /**
@@ -84,7 +83,7 @@ class Node
     }
 
     /**
-     * 节点的执行结果，如果未执行，则为 null
+     * 获取节点的执行结果，如果未执行，则为 null
      * @return \Weiche\Scheduler\DTO\Response
      */
     public function response()
@@ -170,6 +169,27 @@ class Node
     }
 
     /**
+     * 节点在延迟执行或重试的状态下，下次执行的时间
+     * @return int
+     */
+    public function nextExecTime()
+    {
+        if ($this->status === self::STATUS_RETRY || $this->status === self::STATUS_DELAY) {
+            return min($this->delayTo, $this->retryAt);
+        }
+
+        return 0;
+    }
+
+    public function fail($errMsg = '')
+    {
+        $this->status = self::STATUS_FAIL;
+        if (!$this->response) {
+            $this->response = new FatalResponse([], $errMsg);
+        }
+    }
+
+    /**
      * 节点是否会被某个节点阻塞
      * @param Node $blockNode
      * @return bool
@@ -220,6 +240,10 @@ class Node
         }
 
         $this->status = self::STATUS_DOING;
+
+        $this->delayFrom = 0;
+        $this->delayTo = 0;
+        $this->retryAt = 0;
     }
 
     /**

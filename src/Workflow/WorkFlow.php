@@ -2,6 +2,7 @@
 
 namespace Weiche\Scheduler\Workflow;
 
+use Weiche\Scheduler\DTO\FatalResponse;
 use Weiche\Scheduler\DTO\Request;
 use Weiche\Scheduler\Exception\ClassNotFoundException;
 use Weiche\Scheduler\Exception\InvalidConfigException;
@@ -11,6 +12,8 @@ use Weiche\Scheduler\Utils\Config;
 
 /**
  * 工作流基类
+ * 注意：工作流必须正确处理内部抛出的异常，对外只能抛出工作流层面的异常
+ *
  * Class WorkFlow
  * @package Weiche\Scheduler\Workflow
  */
@@ -41,6 +44,8 @@ abstract class WorkFlow
     protected $maxRetryNum;
     // 最大延迟执行次数
     protected $maxDelayNum;
+    // 当处于 wait 态时，下次执行时间
+    protected $nextExecTime;
     // 节点集合, node_name => $node
     protected $nodes = [];
     // 工作流控制器（处理程序）
@@ -72,6 +77,7 @@ abstract class WorkFlow
     /**
      * 执行工作流
      * @throws WorkFlowException
+     * @throws InvalidConfigException
      */
     public function run()
     {
@@ -91,6 +97,50 @@ abstract class WorkFlow
         return $this->status;
     }
 
+    public function fail()
+    {
+        $this->status = self::STATUS_FAIL;
+    }
+
+    /**
+     * 工作流是否需要继续执行
+     * @return bool
+     */
+    public function willContinue()
+    {
+        return $this->status === self::STATUS_WAIT;
+    }
+
+    /**
+     * 下次执行时间
+     * @return int
+     */
+    public function nextExecTime()
+    {
+        return $this->nextExecTime;
+    }
+
+    /**
+     * 执行节点任务
+     * 此处采用贪婪模式，即一次执行尽可能多的节点
+     * @return mixed
+     * @throws \Weiche\Scheduler\Exception\InvalidConfigException
+     */
+    protected function runNodes()
+    {
+        foreach ($this->nodes as $node) {
+            if ($this->canNodeExec($node)) {
+                try {
+                    // 需捕获节点抛出的异常，保证其它节点能够正常并发执行
+                    $this->runNode($node);
+                } catch (\Exception $e) {
+                    // 将节点设置为执行失败
+                    $node->fail(strval($e));
+                }
+            }
+        }
+    }
+
     /**
      * 执行前
      * @throws WorkFlowException
@@ -102,6 +152,7 @@ abstract class WorkFlow
         }
 
         $this->status = self::STATUS_DOING;
+        $this->nextExecTime = 0;
     }
 
     /**
@@ -112,6 +163,11 @@ abstract class WorkFlow
         $this->ttl--;
 
         $this->status = $this->calcStatus();
+
+        if ($this->status === self::STATUS_WAIT) {
+            // wait 态需要计算 wait 的时间
+            $this->nextExecTime = $this->calcNextExecTime();
+        }
     }
 
     /**
@@ -167,6 +223,19 @@ abstract class WorkFlow
     }
 
     /**
+     * 计算工作流下次执行的时间：取所有节点中最小 wait 时间
+     */
+    protected function calcNextExecTime()
+    {
+        $waitTime = 0;
+        foreach ($this->nodes as $node) {
+            $waitTime = min($waitTime, $node->nextExecTime());
+        }
+
+        return $waitTime;
+    }
+
+    /**
      * 基于配置文件初始化工作流对象
      * @param string $name
      * @throws ClassNotFoundException
@@ -202,19 +271,8 @@ abstract class WorkFlow
             $nodeCfg['max_retry_num'] = $nodeCfg['max_retry_num'] ?: $cfg['max_retry_num'];
             $nodeCfg['max_delay_num'] = $nodeCfg['max_delay_num'] ?: $cfg['max_delay_num'];
 
-            $this->nodes[$name] = $this->createNode($name, $nodeCfg);
+            $this->nodes[$name] = new Node($name, $nodeCfg);
         }
-    }
-
-    /**
-     * 子类可以重写以决定使用什么 Node
-     * @param $name
-     * @param $nodeCfg
-     * @return Node
-     */
-    protected function createNode($name, $nodeCfg)
-    {
-        return new Node($name, $nodeCfg);
     }
 
     /**
@@ -398,9 +456,5 @@ abstract class WorkFlow
         return $has;
     }
 
-    /**
-     * 子类需实现此方法实现节点执行
-     * @return mixed
-     */
-    abstract protected function runNodes();
+    abstract protected function runNode(Node $node);
 }

@@ -29,7 +29,7 @@ class A
         try {
             $this->say();
         } catch (\Exception $e) {
-            throw new \Weiche\Scheduler\Exception\WorkFlowException("workflow error", $e->getCode(), $e);
+            print_r($e);
         }
     }
 }
