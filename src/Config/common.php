@@ -20,8 +20,6 @@ return [
         'chroot' => ROOT_PATH,
         // 注意如果Server非正常结束，PID文件不会删除，需要使用swoole_process::kill($pid, 0)来侦测进程是否真的存在
         'pid_file' => DATA_PATH . '/master.pid',
-        // 重启策略
-        'max_request' => 5000,
         'reload_async' => true,
         'max_wait_time' => 60,
     ],

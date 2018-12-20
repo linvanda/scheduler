@@ -62,6 +62,7 @@ abstract class Server
          * 事件注册
          */
         $server->on('start', [$this, 'onStart']);
+        $server->on('shutdown', [$this, 'onShutdown']);
         $server->on('request', [$this, 'onRequest']);
         $server->on('workerStart', [$this, 'onWorkerStart']);
         $server->on('workerStop', [$this, 'onWorkerStop']);
@@ -78,6 +79,11 @@ abstract class Server
     {
         // mac 上不支持设置进程名称
         @swoole_set_process_name('scheduler master process');
+    }
+
+    public function onShutdown(HttpServer $server)
+    {
+
     }
 
     public function onWorkerError(HttpServer $server)

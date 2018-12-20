@@ -25,8 +25,8 @@ class Config
 
         $configPath = APP_PATH . '/Config';
 
-        $commonCfg = include_once($configPath . '/common.php');
-        $envCfg = include_once($configPath . '/' . strtolower(ENV) . '.php');
+        $commonCfg = include($configPath . '/common.php');
+        $envCfg = include($configPath . '/' . strtolower(ENV) . '.php');
 
         // server 的配置特殊处理
         self::$config['server'] = array_replace($commonCfg['server'], $envCfg['server'] ?: []);
@@ -83,5 +83,40 @@ class Config
         }
 
         return $workflows[$name];
+    }
+
+    /**
+     * 子系统配置
+     * @param int|string $systemIdOrAlias 子系统id或者别名
+     * @return array
+     * @throws FileNotFoundException
+     */
+    public static function subSystem($systemIdOrAlias)
+    {
+        static $subSystem;
+
+        if (!$subSystem) {
+            $file = APP_PATH . "/Config/subsystem.php";
+            if (!file_exists($file)) {
+                throw new FileNotFoundException("子系统配置文件不存在");
+            }
+
+            $subSystem = include_once($file);
+        }
+
+        if (is_string($systemIdOrAlias) && strlen($systemIdOrAlias) === 2) {
+            return $subSystem[$systemIdOrAlias];
+        } elseif ($subSystem[$systemIdOrAlias]) {
+            return $subSystem[$subSystem[$systemIdOrAlias]];
+        } else {
+            foreach ($subSystem as $alias => $system) {
+                if ($system['app_id'] == $systemIdOrAlias) {
+                    $subSystem[$systemIdOrAlias] = $alias;
+                    return $system;
+                }
+            }
+        }
+
+        return [];
     }
 }

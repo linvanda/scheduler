@@ -6,10 +6,12 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Coroutine as co;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
+use Weiche\Scheduler\Infrastructure\IRouter;
 use Weiche\Scheduler\Utils\Config;
-use Weiche\Scheduler\Workflow\CoroutineWorkFlow;
 use Weiche\Scheduler\Context\CContext as Context;
 use Weiche\Scheduler\Server\Coroutine\Guard;
+use Weiche\Scheduler\Container;
+use Weiche\Scheduler\Workflow\CoroutineWorkFlow;
 
 /**
  * 协程版 Server
@@ -56,12 +58,16 @@ class CoroutineServer extends Server
     public function onWorkerStop(HttpServer $server, $workerId)
     {
         // 销毁进程上下文
-//        Context::destroy($workerId);
+        Context::destroy();
     }
 
+    /**
+     * @param HttpServer $server
+     * @param $workerId
+     * @throws \Exception
+     */
     public function onWorkerExit(HttpServer $server, $workerId)
     {
-
     }
 
     /**
@@ -71,7 +77,14 @@ class CoroutineServer extends Server
      */
     public function onRequest(Request $request, Response $response)
     {
-        echo "request\n";
-        $response->end("ok");
+        try {
+            /** @var IRouter $router */
+            $router = Container::inst()->make('Router', ['request' => $request->getData()]);
+            // 创建工作流并加入到队列中
+            Context::inst()->workerFlowQueue()->push(new CoroutineWorkFlow($router->workflow(), $router->request()));
+        } catch (\Exception $e) {
+            //TODO 记录错误日志
+
+        }
     }
 }

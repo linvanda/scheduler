@@ -1,5 +1,9 @@
 <?php
 
+use Swoole\Coroutine as co;
+use Weiche\Scheduler\Container;
+use Weiche\Scheduler\Test;
+
 /**
  * 命令行执行的入口程序
  */
@@ -15,23 +19,9 @@ define('ENV_TEST', 'test');
 define('ENV_PREVIEW', 'preview');
 define('ENV_PRODUCTION', 'production');
 
+define('ENV', 'dev');
 require(ROOT_PATH . '/vendor/autoload.php');
 
-class A
-{
-    public function say()
-    {
-        throw new \Weiche\Scheduler\Exception\RunException("run error");
-    }
+echo swoole_process::kill(94996, 0);
 
-    public function hello()
-    {
-        try {
-            $this->say();
-        } catch (\Exception $e) {
-            print_r($e);
-        }
-    }
-}
 
-(new A)->hello();

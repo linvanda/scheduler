@@ -3,9 +3,9 @@
 namespace Weiche\Scheduler\Workflow;
 
 use Weiche\Scheduler\Controller\Controller;
-use Weiche\Scheduler\DTO\FatalResponse;
-use Weiche\Scheduler\DTO\Request;
-use Weiche\Scheduler\DTO\Response;
+use Weiche\Scheduler\Infrastructure\FatalResponse;
+use Weiche\Scheduler\Infrastructure\Request;
+use Weiche\Scheduler\Infrastructure\Response;
 use Weiche\Scheduler\Exception\InvalidResponseException;
 
 /**
@@ -84,7 +84,7 @@ class Node
 
     /**
      * 获取节点的执行结果，如果未执行，则为 null
-     * @return \Weiche\Scheduler\DTO\Response
+     * @return \Weiche\Scheduler\Infrastructure\Response
      */
     public function response()
     {

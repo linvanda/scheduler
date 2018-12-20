@@ -2,8 +2,8 @@
 
 namespace Weiche\Scheduler\Workflow;
 
-use Weiche\Scheduler\DTO\FatalResponse;
-use Weiche\Scheduler\DTO\Request;
+use Weiche\Scheduler\Infrastructure\FatalResponse;
+use Weiche\Scheduler\Infrastructure\Request;
 use Weiche\Scheduler\Exception\ClassNotFoundException;
 use Weiche\Scheduler\Exception\InvalidConfigException;
 use Weiche\Scheduler\Exception\RunException;

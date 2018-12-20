@@ -2,12 +2,12 @@
 
 namespace Weiche\Scheduler\Controller;
 
-use Weiche\Scheduler\DTO\DelayResponse;
-use Weiche\Scheduler\DTO\FailResponse;
-use Weiche\Scheduler\DTO\FatalResponse;
-use Weiche\Scheduler\DTO\OkResponse;
-use Weiche\Scheduler\DTO\Request;
-use Weiche\Scheduler\DTO\Response;
+use Weiche\Scheduler\Infrastructure\DelayResponse;
+use Weiche\Scheduler\Infrastructure\FailResponse;
+use Weiche\Scheduler\Infrastructure\FatalResponse;
+use Weiche\Scheduler\Infrastructure\OkResponse;
+use Weiche\Scheduler\Infrastructure\Request;
+use Weiche\Scheduler\Infrastructure\Response;
 use Weiche\Scheduler\Exception\InvalidCallException;
 
 /**

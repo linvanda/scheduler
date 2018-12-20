@@ -97,6 +97,8 @@ class Guard
      */
     private function post(WorkFlow $workFlow)
     {
+        //TODO 持久化工作流信息
+
         // 协程状态改成闲
         Context::inst()->switchCoToWait($this->cuid);
 
