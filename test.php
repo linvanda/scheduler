@@ -1,8 +1,8 @@
 <?php
 
 use Swoole\Coroutine as co;
-use Weiche\Scheduler\Container;
-use Weiche\Scheduler\Test;
+use Scheduler\Container;
+use Scheduler\Test;
 
 /**
  * 命令行执行的入口程序

@@ -4,7 +4,7 @@
  * 操作脚本（入口程序）
  */
 
-use Weiche\Scheduler\Container;
+use Scheduler\Container;
 
 error_reporting(E_ERROR);
 
@@ -95,13 +95,14 @@ function start($env, $debug = false)
  */
 function stop($force = false)
 {
+    if (!isServerRunning()) {
+        echo "服务未启动\n";
+        return true;
+    }
+
     echo ($force ? "强制" : "") . "停止服务...\n";
 
     $masterPid = masterPid();
-    if (!$masterPid) {
-        echo "未找到 master pid，很可能服务未启动\n";
-        return false;
-    }
 
     if (!$force) {
         if ($noExits = kill($masterPid)) {
@@ -135,7 +136,7 @@ function restart($force = false)
 {
     echo "重启...\n";
 
-    if (!($masterPid = masterPid()) || !swoole_process::kill($masterPid, 0) || stop($force)) {
+    if (stop($force)) {
         start('dev');
     }
 }
@@ -145,7 +146,7 @@ function restart($force = false)
  */
 function reload()
 {
-    if (!isServerStarted()) {
+    if (!isServerRunning()) {
         echo "服务没有启动\n";
         return false;
     }
@@ -155,6 +156,8 @@ function reload()
     $managerPid = managerPid(masterPid());
     $oldWorkerPids = workerPids($managerPid);
     swoole_process::kill($managerPid, SIGUSR1);
+
+    sleep(1);
 
     $retry = 0;
     $suc = false;
@@ -223,7 +226,7 @@ function masterPid()
     return file_get_contents(DATA_PATH . '/master.pid');
 }
 
-function isServerStarted()
+function isServerRunning()
 {
     if (!($masterPid = masterPid()) || !swoole_process::kill($masterPid, 0)) {
         return false;

@@ -17,7 +17,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Weiche\\Scheduler\\": "src/"
+            "Scheduler\\": "src/Lib",
+            "App\\": "src/App"
         }
     }
 }
