@@ -35,6 +35,11 @@ class CContext
     // 当前执行任务中的协程数
     private $coBusyNum = 0;
 
+    /**
+     * CContext constructor.
+     * @throws \Exception
+     * @throws \Scheduler\Exception\FileNotFoundException
+     */
     private function __construct()
     {
         // 创建协程 Channel 排队待执行工作流

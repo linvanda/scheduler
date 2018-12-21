@@ -79,6 +79,14 @@ class Config
         return [];
     }
 
+    /**
+     * 依赖注入（容器）配置
+     * @throws FileNotFoundException
+     */
+    public static function di()
+    {
+        return self::get('di:');
+    }
 
     /**
      * 初始化配置文件
@@ -94,15 +102,15 @@ class Config
 
         list($dir, $module) = explode('/', strpos($module, '/') === false ? "/$module" : $module);
 
-        $configPath = APP_PATH . "/Config/$dir";
-        $file = $configPath . "/$module.php";
+        $configPath = CONFIG_PATH . "/$dir";
+        $file = rtrim($configPath, '/') . "/$module.php";
 
         if (!file_exists($file)) {
             throw new FileNotFoundException("配置文件{$file}不存在");
         }
 
         if ($module === 'common') {
-            $envFile = $configPath . '/' . strtolower(ENV) . '.php';
+            $envFile = rtrim($configPath, '/') . '/' . strtolower(ENV) . '.php';
 
             if (!file_exists($envFile)) {
                 throw new FileNotFoundException("配置文件{$envFile}不存在");

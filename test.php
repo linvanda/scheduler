@@ -12,7 +12,8 @@ error_reporting(E_ALL ^ E_NOTICE);
 
 // 常量定义
 define('ROOT_PATH', dirname(__FILE__));
-define('APP_PATH', ROOT_PATH . '/src');
+define('APP_PATH', ROOT_PATH . '/src/App');
+define('CONFIG_PATH', APP_PATH . '/Config');
 define('DATA_PATH', ROOT_PATH . '/data');
 define('ENV_DEV', 'dev');
 define('ENV_TEST', 'test');
@@ -22,6 +23,5 @@ define('ENV_PRODUCTION', 'production');
 define('ENV', 'dev');
 require(ROOT_PATH . '/vendor/autoload.php');
 
-echo swoole_process::kill(94996, 0);
 
-
+echo method_exists('\Swoole\Runtime', 'enableCoroutine');

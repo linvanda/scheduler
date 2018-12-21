@@ -6,6 +6,7 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Coroutine as co;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
+use Swoole\Runtime;
 use Scheduler\Infrastructure\IRouter;
 use Scheduler\Utils\Config;
 use Scheduler\Context\CContext as Context;
@@ -24,9 +25,15 @@ class CoroutineServer extends Server
      * 工作进程启动
      * @param HttpServer $server
      * @param $workerId
+     * @throws \Scheduler\Exception\FileNotFoundException
      */
     public function onWorkerStart(HttpServer $server, $workerId)
     {
+        // 试图将 PHP 内置 IO 函数协程化
+        if (method_exists('\Swoole\Runtime', 'enableCoroutine')) {
+            Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);
+        }
+
         // 初始化消费端协程(基础消费者协程)
         for ($i = 0; $i < Config::get('coroutine_min_workflow', 5); $i++) {
             co::create((new Guard())->create());
@@ -71,12 +78,19 @@ class CoroutineServer extends Server
     }
 
     /**
-     * 请求到来
+     * 请求到来，创建工作流对象并加入消费队列中
      * @param Request $request
      * @param Response $response
      */
     public function onRequest(Request $request, Response $response)
     {
+        // 如果消费队列满了，则直接返回错误
+        if (Context::inst()->workerFlowQueue()->isFull()) {
+            $response->status(403);
+            $response->end("workflow queue is full");
+            return;
+        }
+
         try {
             /** @var IRouter $router */
             $router = Container::inst()->make('Router', ['request' => $request->getData()]);

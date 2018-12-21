@@ -14,10 +14,6 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
     );
 
     public static $prefixLengthsPsr4 = array (
-        'W' => 
-        array (
-            'Weiche\\Scheduler\\' => 17,
-        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Util\\' => 22,
@@ -26,6 +22,7 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
             'Swlib\\Saber\\' => 12,
             'Swlib\\Http\\' => 11,
             'SuperClosure\\' => 13,
+            'Scheduler\\' => 10,
         ),
         'P' => 
         array (
@@ -47,13 +44,13 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             'DI\\' => 3,
         ),
+        'A' => 
+        array (
+            'App\\' => 4,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Weiche\\Scheduler\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/src',
-        ),
         'Symfony\\Polyfill\\Util\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-util',
@@ -77,6 +74,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'SuperClosure\\' => 
         array (
             0 => __DIR__ . '/..' . '/jeremeamia/SuperClosure/src',
+        ),
+        'Scheduler\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/Lib',
         ),
         'Psr\\Log\\' => 
         array (
@@ -109,6 +110,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'DI\\' => 
         array (
             0 => __DIR__ . '/..' . '/php-di/php-di/src',
+        ),
+        'App\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src/App',
         ),
     );
 

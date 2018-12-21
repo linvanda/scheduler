@@ -4,7 +4,7 @@
  * 操作脚本（入口程序）
  */
 
-use App\Container;
+use Scheduler\Container;
 
 error_reporting(E_ERROR);
 
@@ -25,7 +25,8 @@ if (phpversion('xdebug')) {
 
 // 常量定义
 define('ROOT_PATH', dirname(__FILE__));
-define('APP_PATH', ROOT_PATH . '/src');
+define('APP_PATH', ROOT_PATH . '/src/App');
+define('CONFIG_PATH', APP_PATH . '/Config');
 define('DATA_PATH', ROOT_PATH . '/data');
 define('ENV_DEV', 'dev');
 define('ENV_TEST', 'test');
@@ -79,7 +80,7 @@ function start($env, $debug = false)
     require_once(ROOT_PATH . '/vendor/autoload.php');
 
     try {
-        Container::inst()->make('Server', ['debug' => $debug])->start();
+        Container::make('Server', ['debug' => $debug])->start();
     } catch (\Exception $e) {
         echo "程序执行异常：" . print_r($e->getMessage(), true) . "\n";
         return false;
@@ -201,7 +202,9 @@ function status()
 
     //TODO 获取运行时的统计信息
 
-    var_export($messages);
+    foreach ($messages as $msg) {
+        echo "- $msg\n";
+    }
 }
 
 /**

@@ -4,14 +4,11 @@ namespace Scheduler;
 
 use DI\ContainerBuilder;
 use function DI\create;
-use Scheduler\Infrastructure\Signer\WeicheSigner;
-use Scheduler\Infrastructure\WeicheRouter;
 use Scheduler\Server\CoroutineServer;
-use Scheduler\Server\TaskServer;
 use Scheduler\Utils\Config;
 
 /**
- * 容器包装器
+ * 容器
  * Class Container
  * @package Scheduler
  */
@@ -22,6 +19,33 @@ class Container
 
     protected function __construct()
     {
+    }
+
+    /**
+     * 代理方法：get
+     * @param $name
+     * @return mixed
+     * @throws \DI\DependencyException
+     * @throws \DI\NotFoundException
+     * @throws \Exception
+     */
+    public static function get($name)
+    {
+        return self::inst()->get($name);
+    }
+
+    /**
+     * 代理方法：make
+     * @param $name
+     * @param $params
+     * @return mixed
+     * @throws \DI\DependencyException
+     * @throws \DI\NotFoundException
+     * @throws \Exception
+     */
+    public static function make($name, $params)
+    {
+        return self::inst()->make($name, $params);
     }
 
     /**
@@ -47,15 +71,20 @@ class Container
 
     /**
      * 这里配置注入信息
+     * @throws
      */
     private static function config()
     {
-
-        return [
-            // 服务器
-            'Server' => Config::get('work_type') === 'task' ? create(TaskServer::class) : create(CoroutineServer::class),
-            'Router' => create(WeicheRouter::class),
-            'Signer' =>create(WeicheSigner::class)
-        ];
+        return array_map(
+            function ($class) {
+                return create($class);
+            },
+            array_replace(
+                [
+                    'Server' => CoroutineServer::class
+                ],
+                Config::di()
+            )
+        );
     }
 }
