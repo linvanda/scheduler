@@ -1,6 +1,6 @@
 <?php
 
-namespace Scheduler\Controller;
+namespace Scheduler;
 
 use Scheduler\Infrastructure\DelayResponse;
 use Scheduler\Infrastructure\FailResponse;

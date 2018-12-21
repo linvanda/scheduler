@@ -1,16 +1,14 @@
 <?php
 
-namespace App;
+namespace Scheduler;
 
 use DI\ContainerBuilder;
 use function DI\create;
-use function DI\factory;
 use Scheduler\Infrastructure\Signer\WeicheSigner;
 use Scheduler\Infrastructure\WeicheRouter;
 use Scheduler\Server\CoroutineServer;
 use Scheduler\Server\TaskServer;
 use Scheduler\Utils\Config;
-use Scheduler\Server\Server;
 
 /**
  * 容器包装器
@@ -52,6 +50,7 @@ class Container
      */
     private static function config()
     {
+
         return [
             // 服务器
             'Server' => Config::get('work_type') === 'task' ? create(TaskServer::class) : create(CoroutineServer::class),

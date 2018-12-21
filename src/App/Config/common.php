@@ -23,8 +23,6 @@ return [
         'reload_async' => true,
         'max_wait_time' => 60,
     ],
-    // 工作流工作模式：coroutine 协程模式，task 进程模式
-    'work_type' => 'coroutine',
     // 每个进程工作流排队缓冲区大小
     'coroutine_workflow_buffer_size' => 1024,
     // 每个进程最小消费协程数量

@@ -4,7 +4,7 @@
  * 操作脚本（入口程序）
  */
 
-use Scheduler\Container;
+use App\Container;
 
 error_reporting(E_ERROR);
 
