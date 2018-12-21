@@ -6,6 +6,7 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Scheduler\Utils\Config;
+use Scheduler\Context\GContext;
 
 /**
  * 服务器基类
@@ -19,6 +20,11 @@ abstract class Server
      */
     protected $httpServer;
 
+    /**
+     * Server constructor.
+     * @param int $debug
+     * @throws \Scheduler\Exception\FileNotFoundException
+     */
     public function __construct($debug = 0)
     {
         $this->create($debug);
@@ -33,14 +39,18 @@ abstract class Server
     }
 
     /**
-     * server 工厂方法
+     * 工厂方法
      * @param int $debug
+     * @throws \Scheduler\Exception\FileNotFoundException
      */
     protected function create($debug = 0)
     {
         if ($this->httpServer) {
             return;
         }
+
+        // 初始化全局上下文环境
+        GContext::init();
 
         $config = Config::get('server');
 

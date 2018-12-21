@@ -43,7 +43,7 @@ class CContext
     private function __construct()
     {
         // 创建协程 Channel 排队待执行工作流
-        $this->workFlowQueue = new co\Channel(Config::get('coroutine_workflow_buffer_size', 1024));
+        $this->workFlowQueue = new co\Channel(Config::get('co_workflow_buffer_size', 1024));
         // 消费协程数
         $this->coNum = 0;
     }
@@ -64,87 +64,84 @@ class CContext
     }
 
     /**
-     * 获取某进程上下文
-     * @return CContext
+     * 初始化
      */
-    public static function inst()
+    public static function init()
     {
         if (!self::$context) {
             self::$context = new self();
         }
-
-        return self::$context;
     }
 
     /**
      * 工作流队列
      * @return co\Channel
      */
-    public function workerFlowQueue()
+    public static function workerFlowQueue()
     {
-        return $this->workFlowQueue;
+        return self::$context->workFlowQueue;
     }
 
     /**
      * 当前协程消费端数量
      * @return int
      */
-    public function coNum()
+    public static function coNum()
     {
-        return $this->coWaitNum + $this->coBusyNum;
+        return self::$context->coWaitNum + self::$context->coBusyNum;
     }
 
     /**
      * 添加协程
      * @param $cuid
      */
-    public function addCo($cuid)
+    public static function addCo($cuid)
     {
-        $this->coStatus[$cuid] = self::CO_STATUS_WAIT;
-        $this->coWaitNum++;
+        self::$context->coStatus[$cuid] = self::CO_STATUS_WAIT;
+        self::$context->coWaitNum++;
     }
 
     /**
      * 移除协程
      */
-    public function removeCo($cuid)
+    public static function removeCo($cuid)
     {
-        if ($this->coStatus[$cuid] ==  self::CO_STATUS_WAIT) {
-            $this->coWaitNum--;
+        if (self::$context->coStatus[$cuid] ==  self::CO_STATUS_WAIT) {
+            self::$context->coWaitNum--;
         } else {
-            $this->coBusyNum--;
+            self::$context->coBusyNum--;
         }
 
-        unset($this->coStatus[$cuid]);
+        unset(self::$context->coStatus[$cuid]);
     }
 
     /**
      * 协程切换成闲态
      * @param $cuid
      */
-    public function switchCoToWait($cuid)
+    public static function switchCoToWait($cuid)
     {
-        if ($cuid < 0 || !isset($this->coStatus[$cuid]) || $this->coStatus[$cuid] === self::CO_STATUS_WAIT) {
+        if ($cuid < 0 || !isset(self::$context->coStatus[$cuid]) || self::$context->coStatus[$cuid] === self::CO_STATUS_WAIT) {
             return;
         }
 
-        $this->coStatus[$cuid] = self::CO_STATUS_WAIT;
-        $this->coBusyNum--;
-        $this->coWaitNum++;
+        self::$context->coStatus[$cuid] = self::CO_STATUS_WAIT;
+        self::$context->coBusyNum--;
+        self::$context->coWaitNum++;
     }
 
     /**
      * 协程切换成忙态
      * @param $cuid
      */
-    public function switchCoToBusy($cuid)
+    public static function switchCoToBusy($cuid)
     {
-        if ($cuid < 0 || !isset($this->coStatus[$cuid]) || $this->coStatus[$cuid] === self::CO_STATUS_BUSY) {
+        if ($cuid < 0 || !isset(self::$context->coStatus[$cuid]) || self::$context->coStatus[$cuid] === self::CO_STATUS_BUSY) {
             return;
         }
 
-        $this->coStatus[$cuid] = self::CO_STATUS_BUSY;
-        $this->coWaitNum--;
-        $this->coBusyNum++;
+        self::$context->coStatus[$cuid] = self::CO_STATUS_BUSY;
+        self::$context->coWaitNum--;
+        self::$context->coBusyNum++;
     }
 }

@@ -211,7 +211,7 @@ abstract class WorkFlow
         // 如果有节点失败了，则将 $initList 中受影响的节点剔除
         if ($failList) {
             foreach ($failList as $failNode) {
-                $this->excludeBlockedNodes($initList, $failNode);
+                $this->kickoutBlockedNodes($initList, $failNode);
             }
 
             if (!$initList) {
@@ -340,7 +340,7 @@ abstract class WorkFlow
      * @param array $nodeList
      * @param Node $blockNode
      */
-    private function excludeBlockedNodes(&$nodeList, Node $blockNode)
+    private function kickoutBlockedNodes(&$nodeList, Node $blockNode)
     {
         static $tick = 0;
 
@@ -357,7 +357,7 @@ abstract class WorkFlow
             if ($node->willBeBlocked($blockNode)) {
                 // 被阻塞，移除并递归校验
                 unset($nodeList[$key]);
-                $this->excludeBlockedNodes($nodeList, $node);
+                $this->kickoutBlockedNodes($nodeList, $node);
             }
         }
     }

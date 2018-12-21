@@ -220,6 +220,10 @@ function workerPids($managerPid)
 
 function managerPid($masterPid)
 {
+    if (!$masterPid || !swoole_process::kill($masterPid, 0)) {
+        return 0;
+    }
+
     exec("ps -ef|grep $masterPid|awk '$3==$masterPid{print $2}'", $manger);
     return $manger[0];
 }

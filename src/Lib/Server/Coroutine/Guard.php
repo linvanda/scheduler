@@ -40,7 +40,7 @@ class Guard
              * 从工作流队列取出工作流对象并执行
              */
             while (true) {
-                if (($workFlow = Context::inst()->workerFlowQueue()->pop()) instanceof CoroutineWorkFlow) {
+                if (($workFlow = Context::workerFlowQueue()->pop()) instanceof CoroutineWorkFlow) {
                     $this->run($workFlow);
                 } else {
                     break;
@@ -79,7 +79,7 @@ class Guard
         }
 
         // 将协程添加到上下文环境信息中
-        Context::inst()->addCo($this->cuid);
+        Context::addCo($this->cuid);
     }
 
     /**
@@ -88,7 +88,7 @@ class Guard
     private function pre()
     {
         // 状态改成忙
-        Context::inst()->switchCoToBusy($this->cuid);
+        Context::switchCoToBusy($this->cuid);
     }
 
     /**
@@ -100,13 +100,13 @@ class Guard
         //TODO 持久化工作流信息
 
         // 协程状态改成闲
-        Context::inst()->switchCoToWait($this->cuid);
+        Context::switchCoToWait($this->cuid);
 
         // 根据工作流的状态决定是立即执行下阶段、延迟加入到队列中还是结束
         if ($workFlow->willContinue()) {
             if ($nextTime = $workFlow->nextExecTime()) {
                 swoole_timer_after($nextTime * 1000, function () use ($workFlow) {
-                    Context::inst()->workerFlowQueue()->push($workFlow);
+                    Context::workerFlowQueue()->push($workFlow);
                 });
             } else {
                 $this->run($workFlow);
@@ -120,6 +120,6 @@ class Guard
     private function destroy()
     {
         // 从上下文中移除协程信息
-        Context::inst()->removeCo($this->cuid);
+        Context::removeCo($this->cuid);
     }
 }

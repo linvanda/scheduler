@@ -4,6 +4,7 @@ namespace Scheduler;
 
 use DI\ContainerBuilder;
 use function DI\create;
+use Scheduler\Infrastructure\Router;
 use Scheduler\Server\CoroutineServer;
 use Scheduler\Utils\Config;
 
@@ -81,7 +82,8 @@ class Container
             },
             array_replace(
                 [
-                    'Server' => CoroutineServer::class
+                    'Server' => CoroutineServer::class,
+                    'Router' => Router::class
                 ],
                 Config::di()
             )

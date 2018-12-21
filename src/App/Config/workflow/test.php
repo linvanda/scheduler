@@ -1,7 +1,5 @@
 <?php
 
-use Scheduler\Controller\OneKeyOilController;
-
 /**
  * 一键加油工作流模板
  */
@@ -14,7 +12,7 @@ return [
     // 当节点需要延迟执行时，延迟的秒数，可在节点配置中覆盖
     'delay' => 5,
     // 处理程序类名
-    'controller' => OneKeyOilController::class,
+    'controller' => \App\Controller\TestController::class,
     // 节点定义
     'nodes' => [
         'step1' =>[
@@ -23,7 +21,6 @@ return [
             'max_retry_num' => 3,
         ],
         'step2' => [
-            'action' => 'step222',
             'max_delay_num' => 3,
         ],
         'step3' => [

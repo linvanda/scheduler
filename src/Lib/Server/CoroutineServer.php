@@ -34,24 +34,25 @@ class CoroutineServer extends Server
             Runtime::enableCoroutine(true, SWOOLE_HOOK_ALL);
         }
 
+        // 初始化进程上下文
+        Context::init();
+
         // 初始化消费端协程(基础消费者协程)
-        for ($i = 0; $i < Config::get('coroutine_min_workflow', 5); $i++) {
+        for ($i = 0; $i < Config::get('co_min_workflow', 5); $i++) {
             co::create((new Guard())->create());
         }
 
         // 定时检查工作流队列情况，如果满了，则创建额外的消费端协程
         $server->tick(5000, function () {
-            $context = Context::inst();
-
-            $willCreatNum = min(Config::get('coroutine_create_size'), Config::get('coroutine_max_workflow') - $context->coNum());
+            $willCreatNum = min(Config::get('co_create_size'), Config::get('co_max_workflow') - Context::coNum());
             if (
-                $context->workerFlowQueue()->length() >= Config::get('coroutine_create_threshold', 10)
-                && $context->coNum() < Config::get('coroutine_max_workflow')
+                Context::workerFlowQueue()->length() >= Config::get('co_create_threshold', 10)
+                && Context::coNum() < Config::get('co_max_workflow')
                 && co::stats()['coroutine_num'] < Config::get('server.max_coroutine') - $willCreatNum
             ) {
                 // 增量创建协程消费者，这些消费者需要设置超时时间，防止出现过多等待协程
                 for ($i = 0; $i < $willCreatNum; $i++) {
-                    co::create((new Guard())->create(Config::get('coroutine_timeout', 60)));
+                    co::create((new Guard())->create(Config::get('co_timeout', 60)));
                 }
             }
         });
@@ -85,20 +86,25 @@ class CoroutineServer extends Server
     public function onRequest(Request $request, Response $response)
     {
         // 如果消费队列满了，则直接返回错误
-        if (Context::inst()->workerFlowQueue()->isFull()) {
+        if (Context::workerFlowQueue()->isFull()) {
             $response->status(403);
             $response->end("workflow queue is full");
             return;
         }
 
         try {
-            /** @var IRouter $router */
-            $router = Container::inst()->make('Router', ['request' => $request->getData()]);
+            /** @var IRouter $router 路由解析*/
+            $router = Container::inst()->make('Router', ['request' => $request]);
+
             // 创建工作流并加入到队列中
-            Context::inst()->workerFlowQueue()->push(new CoroutineWorkFlow($router->workflow(), $router->request()));
+            Context::workerFlowQueue()->push(new CoroutineWorkFlow($router->workflow(), $router->request()));
+            $response->end(json_encode(['code' => 200, 'msg' => 'ok']));
         } catch (\Exception $e) {
             //TODO 记录错误日志
+            print_r($e);
 
+            $response->status(500);
+            $response->end($e->getMessage());
         }
     }
 }

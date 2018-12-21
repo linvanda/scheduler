@@ -2,7 +2,7 @@
 
 namespace Scheduler\Workflow;
 
-use Scheduler\Controller\Controller;
+use Scheduler\Controller;
 use Scheduler\Infrastructure\FatalResponse;
 use Scheduler\Infrastructure\Request;
 use Scheduler\Infrastructure\Response;
@@ -213,13 +213,16 @@ class Node
 
         if ($preResponseCode) {
             $preCode = $blockNode->response()->getCode();
-            if (is_string($preResponseCode) && strpos($preCode, rtrim($preResponseCode, '*')) !== 0) {
-                return true;
-            } elseif (is_array($preResponseCode) && !in_array($preCode, $preResponseCode)) {
-                return true;
-            } elseif ($preCode != $preResponseCode) {
-                return true;
+
+            if (is_string($preResponseCode)) {
+                return strpos($preCode, rtrim($preResponseCode, '*')) !== 0;
             }
+
+            if (is_array($preResponseCode)) {
+                return !in_array($preCode, $preResponseCode);
+            }
+
+            return $preCode != $preResponseCode;
         }
 
         return false;

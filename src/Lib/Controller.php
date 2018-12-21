@@ -39,6 +39,10 @@ class Controller
         $this->pre($actionName, $request, $prevResponses);
         $response = $this->$actionName($request, $prevResponses);
 
+        if ($response === true) {
+            $response = ['code' => 200, 'msg' => 'suc', 'data' => []];
+        }
+
         if (!$response) {
             $response = new FatalResponse([], "处理程序未返回任何结果");
         } elseif (is_array($response)) {

@@ -25,17 +25,17 @@ return [
         'max_wait_time' => 60,
     ],
     // 每个进程工作流排队缓冲区大小
-    'coroutine_workflow_buffer_size' => 1024,
+    'co_workflow_buffer_size' => 1024,
     // 每个进程最小消费协程数量，服务启动时创建的消费者协程个数
-    'coroutine_min_workflow' => 5,
+    'co_min_workflow' => 5,
     // 每个进程最多允许启动多少个协程处理工作流，该值不能大于 server.max_coroutine
-    'coroutine_max_workflow' => 2000,
-    // 当工作流等待队列中等待元素数大于此值时开始增量创建消费者协程，需要小于coroutine_workflow_buffer_size
-    'coroutine_create_threshold' => 15,
+    'co_max_workflow' => 2000,
+    // 当工作流等待队列中等待元素数大于此值时开始增量创建消费者协程，需要小于co_workflow_buffer_size
+    'co_create_threshold' => 15,
     // 增量创建消费者协程时每次创建的数量
-    'coroutine_create_size' => 10,
+    'co_create_size' => 10,
     // 消费者协程等待超时时间
-    'coroutine_timeout' => 60,
+    'co_timeout' => 60,
     'redis' => [
         'host' => '192.168.1.45',
     ],
