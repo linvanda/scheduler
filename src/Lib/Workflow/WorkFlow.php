@@ -166,11 +166,23 @@ abstract class WorkFlow
     {
         $this->ttl--;
 
+        // 对于延迟执行的节点，需要将依赖该节点的所有节点也设置为延迟执行
+        $this->delayRelationalNodes();
+
         $this->status = $this->calcStatus();
 
         if ($this->status === self::STATUS_WAIT) {
             // wait 态需要计算 wait 的时间
             $this->nextExecTime = $this->calcNextExecTime();
+        }
+    }
+
+    protected function delayRelationalNodes()
+    {
+        foreach ($this->nodes as $node) {
+            if ($node->isDelayed()) {
+
+            }
         }
     }
 
@@ -227,11 +239,12 @@ abstract class WorkFlow
     }
 
     /**
-     * 计算工作流下次执行的时间：取所有节点中最小 wait 时间
+     * 计算工作流下次执行的时间：取所有节点中最小 wait 时间，返回 0 表示需要立即执行，PHP_INT_MAX 表示不需要执行
+     * @return int
      */
     protected function calcNextExecTime()
     {
-        $waitTime = 0;
+        $waitTime = PHP_INT_MAX;
         foreach ($this->nodes as $node) {
             $waitTime = min($waitTime, $node->nextExecTime());
         }
@@ -353,7 +366,7 @@ abstract class WorkFlow
         }
 
         // 调用深度控制，防止因循环依赖而导致无限调用
-        if ($tick++ > 100) {
+        if ($tick++ > 500) {
             return;
         }
 
@@ -364,6 +377,37 @@ abstract class WorkFlow
                 $this->kickoutBlockedNodes($nodeList, $node);
             }
         }
+    }
+
+    /**
+     * 获取节点池中受 $blockNode 影响的 $node 集合
+     * @param Node $blockNode
+     * @param Node $nodePool
+     * @return array 相关 Node
+     */
+    public function relationalNodes(Node $blockNode, Node $nodePool)
+    {
+        static $tick = 0;
+
+        if (!$nodePool || !$blockNode) {
+            return [];
+        }
+
+        // 调用深度控制，防止因循环依赖而导致无限调用
+        if ($tick++ > 500) {
+            return [];
+        }
+
+        $nodes = [];
+        foreach ($nodePool as $key => $node) {
+            if ($node->willBeBlocked($blockNode)) {
+                // 被阻塞，记录并递归校验
+                $nodes[] = $node;
+                $nodes = array_merge($nodes, $this->relationalNodes($node, $nodePool));
+            }
+        }
+
+        return $nodes;
     }
 
     /**

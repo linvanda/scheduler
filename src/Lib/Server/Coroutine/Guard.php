@@ -105,15 +105,17 @@ class Guard
         // 根据工作流的状态决定是立即执行下阶段、延迟加入到队列中还是结束
         if ($workFlow->willContinue()) {
             if ($nextTime = $workFlow->nextExecTime()) {
+                echo "nex time: $nextTime -- ".(time()-$nextTime)."\n";
                 swoole_timer_after($nextTime * 1000, function () use ($workFlow) {
                     Context::workerFlowQueue()->push($workFlow);
                 });
             } else {
+                echo "now\n";
                 $this->run($workFlow);
             }
         } else {
             // 工作流执行完成
-            echo "work done。=== {$workFlow->status()}--";
+            echo "\nwork done。=== {$workFlow->status()}--\n";
             foreach ($workFlow->nodes() as $nodeName => $node) {
                 echo "node:$nodeName,status:{$node->status()},msg:{$node->response()->getMessage()},desc:{$node->response()->getDesc()}\n\n";
             }

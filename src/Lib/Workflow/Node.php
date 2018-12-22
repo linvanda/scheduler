@@ -36,10 +36,6 @@ class Node
     protected $status;
     // 当 status 是延迟执行时，延迟的秒数
     protected $delay;
-    // 当需要延迟执行时，从什么时候开始延迟
-    protected $delayFrom;
-    // 延迟到什么时候
-    protected $delayTo;
     // 已延迟次数
     protected $delayedNum = 0;
     // 节点最大重试次数
@@ -48,8 +44,8 @@ class Node
     protected $maxDelayNum;
     // 节点已重试次数。第一次执行和延迟执行不算重试
     protected $retriedNum = 0;
-    // 节点重试时，下次重试的时间
-    protected $retryAt;
+    // 下次执行时间
+    protected $nextExecTime = 0;
     /**
      * 节点执行后返回值
      * @var Response
@@ -116,21 +112,20 @@ class Node
     }
 
     /**
-     * 节点是否 sleep 态（被 delay 的或 retry 的且未到时间）
+     * 节点是否 sleep 态
      * @return bool
      */
     public function isSleep()
     {
-        $now = time();
+        return $this->nextExecTime > time();
+    }
 
-        if (
-            $this->status === self::STATUS_DELAY && $this->delayTo > $now ||
-            $this->status === self::STATUS_RETRY && $this->retryAt > $now
-        ) {
-            return true;
-        }
-
-        return false;
+    /**
+     * 是否延迟执行中
+     */
+    public function isDelayed()
+    {
+        return $this->status === self::STATUS_DELAY || $this->status === self::STATUS_RETRY;
     }
 
     /**
@@ -170,24 +165,34 @@ class Node
     }
 
     /**
-     * 节点在延迟执行或重试的状态下，下次执行的时间
+     * 节点下次执行的时间，0 表示需要立即执行，PHP_INT_MAX 表示不需要执行
      * @return int
      */
     public function nextExecTime()
     {
-        if ($this->status === self::STATUS_RETRY || $this->status === self::STATUS_DELAY) {
-            return min($this->delayTo, $this->retryAt);
-        }
-
-        return 0;
+        return $this->isFinished() ? PHP_INT_MAX : $this->nextExecTime;
     }
 
+    /**
+     * 强制失败
+     * @param string $errMsg
+     * @param string $desc
+     */
     public function fail($errMsg = '', $desc = '')
     {
         $this->status = self::STATUS_FAIL;
         if (!$this->response) {
             $this->response = new FatalResponse([], $errMsg, $desc);
         }
+    }
+
+    /**
+     * 强制延迟执行
+     * @param $nextExecTime
+     */
+    public function delayTo($nextExecTime)
+    {
+        $this->nextExecTime = $nextExecTime;
     }
 
     /**
@@ -230,7 +235,7 @@ class Node
     }
 
     /**
-     * 控制器执行前
+     * 执行前
      */
     protected function pre()
     {
@@ -245,9 +250,7 @@ class Node
 
         $this->status = self::STATUS_DOING;
 
-        $this->delayFrom = 0;
-        $this->delayTo = 0;
-        $this->retryAt = 0;
+        $this->nextExecTime = 0;
     }
 
     /**
@@ -272,8 +275,7 @@ class Node
                     $this->status = self::STATUS_FAIL;
                 } else {
                     $this->status = self::STATUS_DELAY;
-                    $this->delayFrom = time();
-                    $this->delayTo = $this->delayFrom + ($this->delay ?? $this->workFlow->delay);
+                    $this->nextExecTime = time() + $this->delay;
                 }
                 break;
             case 4:
@@ -282,7 +284,7 @@ class Node
                     $this->status = self::STATUS_FAIL;
                 } else {
                     $this->status = self::STATUS_RETRY;
-                    $this->retryAt = time() + $this->retryInterval[$this->retriedNum + 1];
+                    $this->nextExecTime = time() + ($this->retryInterval[$this->retriedNum + 1] ?? 0);
                 }
                 break;
             case 5:

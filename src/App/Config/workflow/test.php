@@ -11,6 +11,8 @@ return [
     'max_delay_num' => 5,
     // 当节点需要延迟执行时，延迟的秒数，可在节点配置中覆盖
     'delay' => 5,
+    // 每个节点最长执行时间，单位 s，默认 5min
+    'max_node_run_time' => 600,
     // 处理程序类名
     'controller' => \App\Controller\TestController::class,
     // 节点定义

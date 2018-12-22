@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Scheduler\Controller;
+use Scheduler\Infrastructure\Response\Response;
 
 /**
  * 测试处理程序
@@ -14,15 +15,13 @@ class TestController extends Controller
 {
     public function step1()
     {
-        throw new \Exception("啊啊啊");
-        echo "step1";
+        sleep(5);
         return true;
     }
 
     public function step2()
     {
-        echo "step2";
-        return true;
+        return ['code' => Response::CODE_DELAY];
     }
 
     public function step3()
