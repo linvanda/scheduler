@@ -99,6 +99,7 @@ abstract class Server
     public function onWorkerError(HttpServer $server)
     {
         // 记录错误日志
+        echo "work error==";
     }
 
     /**

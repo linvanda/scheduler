@@ -11,7 +11,7 @@ use Scheduler\Test;
 error_reporting(E_ALL ^ E_NOTICE);
 
 // 常量定义
-define('ROOT_PATH', dirname(__FILE__));
+define('ROOT_PATH', dirname(dirname(__FILE__)));
 define('APP_PATH', ROOT_PATH . '/src/App');
 define('CONFIG_PATH', APP_PATH . '/Config');
 define('DATA_PATH', ROOT_PATH . '/data');
@@ -23,5 +23,14 @@ define('ENV_PRODUCTION', 'production');
 define('ENV', 'dev');
 require(ROOT_PATH . '/vendor/autoload.php');
 
-
-echo method_exists('\Swoole\Runtime', 'enableCoroutine');
+try {
+    co::create(function() {
+       try {
+           throw new \Exception("错误了");
+       } catch(\Exception $e) {
+           echo "ooooo";
+       }
+    });
+} catch (\Exception $e) {
+    echo "erro catched";
+}

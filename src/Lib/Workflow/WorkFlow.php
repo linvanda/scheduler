@@ -2,7 +2,7 @@
 
 namespace Scheduler\Workflow;
 
-use Scheduler\Infrastructure\FatalResponse;
+use Scheduler\Infrastructure\Response\FatalResponse;
 use Scheduler\Infrastructure\Request;
 use Scheduler\Exception\ClassNotFoundException;
 use Scheduler\Exception\InvalidConfigException;
@@ -102,6 +102,11 @@ abstract class WorkFlow
         $this->status = self::STATUS_FAIL;
     }
 
+    public function nodes()
+    {
+        return $this->nodes;
+    }
+
     /**
      * 工作流是否需要继续执行
      * @return bool
@@ -131,11 +136,10 @@ abstract class WorkFlow
         foreach ($this->nodes as $node) {
             if ($this->canNodeExec($node)) {
                 try {
-                    // 需捕获节点抛出的异常，保证其它节点能够正常并发执行
                     $this->runNode($node);
                 } catch (\Exception $e) {
                     // 将节点设置为执行失败
-                    $node->fail(strval($e));
+                    $node->fail($e->getMessage(), $e->getTraceAsString());
                 }
             }
         }
@@ -456,5 +460,10 @@ abstract class WorkFlow
         return $has;
     }
 
+    /**
+     * 执行某个节点
+     * @param Node $node
+     * @return mixed
+     */
     abstract protected function runNode(Node $node);
 }

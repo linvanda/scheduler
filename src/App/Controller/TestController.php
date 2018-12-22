@@ -14,6 +14,7 @@ class TestController extends Controller
 {
     public function step1()
     {
+        throw new \Exception("啊啊啊");
         echo "step1";
         return true;
     }

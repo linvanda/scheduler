@@ -111,6 +111,12 @@ class Guard
             } else {
                 $this->run($workFlow);
             }
+        } else {
+            // 工作流执行完成
+            echo "work done。=== {$workFlow->status()}--";
+            foreach ($workFlow->nodes() as $nodeName => $node) {
+                echo "node:$nodeName,status:{$node->status()},msg:{$node->response()->getMessage()},desc:{$node->response()->getDesc()}\n\n";
+            }
         }
     }
 

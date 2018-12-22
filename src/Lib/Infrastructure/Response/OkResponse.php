@@ -1,11 +1,11 @@
 <?php
 
-namespace Scheduler\Infrastructure;
+namespace Scheduler\Infrastructure\Response;
 
 /**
  * 便利响应类：执行成功
  * Class OkResponse
- * @package Scheduler\Infrastructure
+ * @package Scheduler\Infrastructure\Response
  */
 class OkResponse extends Response
 {

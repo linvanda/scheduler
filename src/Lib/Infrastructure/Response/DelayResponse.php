@@ -1,11 +1,11 @@
 <?php
 
-namespace Scheduler\Infrastructure;
+namespace Scheduler\Infrastructure\Response;
 
 /**
  * 便利响应类：延迟执行
  * Class DelayResponse
- * @package Scheduler\Infrastructure
+ * @package Scheduler\Infrastructure\Response
  */
 class DelayResponse extends Response
 {

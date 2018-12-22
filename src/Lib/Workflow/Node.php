@@ -3,9 +3,10 @@
 namespace Scheduler\Workflow;
 
 use Scheduler\Controller;
-use Scheduler\Infrastructure\FatalResponse;
+use Scheduler\Infrastructure\Response\FatalResponse;
 use Scheduler\Infrastructure\Request;
-use Scheduler\Infrastructure\Response;
+use Scheduler\Infrastructure\Response\NoneResponse;
+use Scheduler\Infrastructure\Response\Response;
 use Scheduler\Exception\InvalidResponseException;
 
 /**
@@ -83,12 +84,12 @@ class Node
     }
 
     /**
-     * 获取节点的执行结果，如果未执行，则为 null
-     * @return \Scheduler\Infrastructure\Response
+     * 获取节点的执行结果，如果未执行，则返回 NoneResponse
+     * @return \Scheduler\Infrastructure\Response\Response
      */
     public function response()
     {
-        return $this->response;
+        return $this->response ?: new NoneResponse();
     }
 
     public function name()
@@ -181,11 +182,11 @@ class Node
         return 0;
     }
 
-    public function fail($errMsg = '')
+    public function fail($errMsg = '', $desc = '')
     {
         $this->status = self::STATUS_FAIL;
         if (!$this->response) {
-            $this->response = new FatalResponse([], $errMsg);
+            $this->response = new FatalResponse([], $errMsg, $desc);
         }
     }
 

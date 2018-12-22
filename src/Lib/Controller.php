@@ -2,12 +2,12 @@
 
 namespace Scheduler;
 
-use Scheduler\Infrastructure\DelayResponse;
-use Scheduler\Infrastructure\FailResponse;
-use Scheduler\Infrastructure\FatalResponse;
-use Scheduler\Infrastructure\OkResponse;
+use Scheduler\Infrastructure\Response\DelayResponse;
+use Scheduler\Infrastructure\Response\FailResponse;
+use Scheduler\Infrastructure\Response\FatalResponse;
+use Scheduler\Infrastructure\Response\OkResponse;
 use Scheduler\Infrastructure\Request;
-use Scheduler\Infrastructure\Response;
+use Scheduler\Infrastructure\Response\Response;
 use Scheduler\Exception\InvalidCallException;
 
 /**
@@ -15,6 +15,7 @@ use Scheduler\Exception\InvalidCallException;
  * 注意：如果控制器对外抛出任何异常，则该节点会执行失败，不会被重试，但不会影响其它不相干节点的执行
  * 如果需要重试，控制器需要返回相关 Response 对象(或者对应的数组格式)
  * 正常情况下，控制器不应该再对外抛出异常，应当将内部异常转化为相应的 Response
+ * 控制器返回 true 会被转化为 OkResponse，未返回任何东西会被转化为 FatalResponse
  *
  * Class Controller
  * @package Scheduler\Controller
@@ -44,7 +45,7 @@ class Controller
         }
 
         if (!$response) {
-            $response = new FatalResponse([], "处理程序未返回任何结果");
+            $response = new FatalResponse([], "处理程序" . get_called_class() . ":{$actionName}未返回任何结果");
         } elseif (is_array($response)) {
             $response = $this->arrayToResponse($response);
         }
@@ -59,7 +60,6 @@ class Controller
      * @param string $actionName
      * @param Request $request
      * @param array $prevResponses
-     * @return bool
      */
     protected function pre(string $actionName, Request $request, array $prevResponses = [])
     {
@@ -80,7 +80,7 @@ class Controller
 
     /**
      * 数组转响应对象
-     * @param array $arr 格式：['code' => 200, 'msg' => '', 'data' => []]
+     * @param array $arr 格式：['code' => 200, 'msg' => '', 'data' => [], 'desc' => '详细描述'], 目前 desc 只对 Fatal 有效
      * @return Response
      */
     protected function arrayToResponse($arr)
@@ -100,7 +100,7 @@ class Controller
             case Response::CODE_FAIL:
                 return new FailResponse($arr['data'], $arr['msg']);
             case Response::CODE_FATAL:
-                return new FatalResponse($arr['data'], $arr['msg']);
+                return new FatalResponse($arr['data'], $arr['msg'], $arr['desc'] ?: '');
             default:
                 return new Response($arr['code'], $arr['data'], $arr['msg']);
         }

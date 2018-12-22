@@ -14,5 +14,5 @@ go(function () {
 
     $response = SaberGM::get('http://localhost:9876', ['data' => ['workflow' => 'test', 'data' => ['id' => 123]]]);
 
-//    var_export($response);
+    var_export($response->body->read(100));
 });

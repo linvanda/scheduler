@@ -1,11 +1,11 @@
 <?php
 
-namespace Scheduler\Infrastructure;
+namespace Scheduler\Infrastructure\Response;
 
 /**
  * 便利响应类：执行失败，需要重试
  * Class FailResponse
- * @package Scheduler\Infrastructure
+ * @package Scheduler\Infrastructure\Response
  */
 class FailResponse extends Response
 {
