@@ -1,17 +1,16 @@
 <?php
 
-namespace Scheduler;
+namespace Scheduler\Infrastructure;
 
 use DI\ContainerBuilder;
 use function DI\create;
-use Scheduler\Infrastructure\Router;
 use Scheduler\Server\CoroutineServer;
 use Scheduler\Utils\Config;
 
 /**
  * 容器
  * Class Container
- * @package Scheduler
+ * @package Scheduler\Infrastructure
  */
 class Container
 {
@@ -32,7 +31,7 @@ class Container
      */
     public static function get($name)
     {
-        return self::inst()->get($name);
+        return self::$di->get($name);
     }
 
     /**
@@ -46,14 +45,13 @@ class Container
      */
     public static function make($name, $params)
     {
-        return self::inst()->make($name, $params);
+        return self::$di->make($name, $params);
     }
 
     /**
-     * @return \DI\Container
      * @throws \Exception
      */
-    public static function inst()
+    public static function init()
     {
         if (!self::$di) {
             $builder = new ContainerBuilder();
@@ -66,8 +64,6 @@ class Container
             $builder->addDefinitions(self::config());
             self::$di = $builder->build();
         }
-
-        return self::$di;
     }
 
     /**

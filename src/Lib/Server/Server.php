@@ -2,6 +2,7 @@
 
 namespace Scheduler\Server;
 
+use Scheduler\Infrastructure\Container;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -42,6 +43,7 @@ abstract class Server
      * 工厂方法
      * @param int $debug
      * @throws \Scheduler\Exception\FileNotFoundException
+     * @throws \Exception
      */
     protected function create($debug = 0)
     {
@@ -51,6 +53,8 @@ abstract class Server
 
         // 初始化全局上下文环境
         GContext::init();
+        // 初始化容器
+        Container::init();
 
         $config = Config::get('server');
 

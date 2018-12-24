@@ -177,11 +177,18 @@ abstract class WorkFlow
         }
     }
 
+    /**
+     * 节点延迟执行级联处理，将延迟处理的下级相关节点都延迟处理
+     */
     protected function delayRelationalNodes()
     {
-        foreach ($this->nodes as $node) {
-            if ($node->isDelayed()) {
+        $delayedNodes = array_filter($this->nodes, function (Node $node) {
+            return $node->isDelayed();
+        });
 
+        foreach ($delayedNodes as $node) {
+            foreach ($this->relationalNodes($node, $this->nodes) as $relNode) {
+                $relNode->delayTo($node->nextExecTime());
             }
         }
     }
@@ -227,7 +234,8 @@ abstract class WorkFlow
         // 如果有节点失败了，则将 $initList 中受影响的节点剔除
         if ($failList) {
             foreach ($failList as $failNode) {
-                $this->kickoutBlockedNodes($initList, $failNode);
+                // 剔除 $initList 中相关节点
+                $initList = array_diff($initList, $this->relationalNodes($failNode, $initList));
             }
 
             if (!$initList) {
@@ -353,39 +361,12 @@ abstract class WorkFlow
     }
 
     /**
-     * 从 $nodeList 中剔除受到 $blockNode 影响而无法执行的节点
-     * @param array $nodeList
-     * @param Node $blockNode
-     */
-    private function kickoutBlockedNodes(&$nodeList, Node $blockNode)
-    {
-        static $tick = 0;
-
-        if (!$nodeList || !$blockNode) {
-            return;
-        }
-
-        // 调用深度控制，防止因循环依赖而导致无限调用
-        if ($tick++ > 500) {
-            return;
-        }
-
-        foreach ($nodeList as $key => $node) {
-            if ($node->willBeBlocked($blockNode)) {
-                // 被阻塞，移除并递归校验
-                unset($nodeList[$key]);
-                $this->kickoutBlockedNodes($nodeList, $node);
-            }
-        }
-    }
-
-    /**
      * 获取节点池中受 $blockNode 影响的 $node 集合
      * @param Node $blockNode
-     * @param Node $nodePool
+     * @param array $nodePool
      * @return array 相关 Node
      */
-    public function relationalNodes(Node $blockNode, Node $nodePool)
+    public function relationalNodes(Node $blockNode, array $nodePool)
     {
         static $tick = 0;
 
@@ -394,7 +375,7 @@ abstract class WorkFlow
         }
 
         // 调用深度控制，防止因循环依赖而导致无限调用
-        if ($tick++ > 500) {
+        if ($tick++ > 1000) {
             return [];
         }
 
@@ -407,7 +388,7 @@ abstract class WorkFlow
             }
         }
 
-        return $nodes;
+        return array_unique($nodes);
     }
 
     /**

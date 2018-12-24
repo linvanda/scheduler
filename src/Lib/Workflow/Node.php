@@ -16,6 +16,9 @@ use Scheduler\Exception\InvalidResponseException;
  */
 class Node
 {
+    // 重试时间间隔和次数的关系，单位 s
+    const RETRY_INTERVAL = [1 => 5, 2 => 15, 3 => 30, 4 => 180, 5 => 600, 6 => 1800, 7 => 3600, 8 => 10800, 9 => 18000, 10 => 36000];
+
     // 未执行
     const STATUS_INIT = 1;
     // 执行中
@@ -53,8 +56,6 @@ class Node
     protected $response;
     // 前置条件
     protected $conditions = [];
-    // 重试时间间隔和次数的关系，单位 s
-    protected $retryInterval = [1 => 5, 2 => 15, 3 => 30, 4 => 180, 5 => 600, 6 => 1800, 7 => 3600, 8 => 10800, 9 => 18000, 10 => 36000];
 
     public function __construct(string $name, array $nodeConfig)
     {
@@ -192,7 +193,10 @@ class Node
      */
     public function delayTo($nextExecTime)
     {
-        $this->nextExecTime = $nextExecTime;
+        if (!$this->isFinished()) {
+            $this->status = self::STATUS_DELAY;
+            $this->nextExecTime = $nextExecTime;
+        }
     }
 
     /**
@@ -232,6 +236,11 @@ class Node
         }
 
         return false;
+    }
+
+    public function __toString()
+    {
+        return $this->name;
     }
 
     /**
@@ -284,7 +293,7 @@ class Node
                     $this->status = self::STATUS_FAIL;
                 } else {
                     $this->status = self::STATUS_RETRY;
-                    $this->nextExecTime = time() + ($this->retryInterval[$this->retriedNum + 1] ?? 0);
+                    $this->nextExecTime = time() + (self::RETRY_INTERVAL[$this->retriedNum + 1] ?? 0);
                 }
                 break;
             case 5:

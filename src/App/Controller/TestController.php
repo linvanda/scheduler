@@ -15,13 +15,12 @@ class TestController extends Controller
 {
     public function step1()
     {
-        sleep(5);
-        return true;
+        return ['code' => Response::CODE_DELAY];
     }
 
     public function step2()
     {
-        return ['code' => Response::CODE_DELAY];
+        return true;
     }
 
     public function step3()

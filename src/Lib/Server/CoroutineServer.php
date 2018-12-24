@@ -11,7 +11,7 @@ use Scheduler\Infrastructure\IRouter;
 use Scheduler\Utils\Config;
 use Scheduler\Context\CContext as Context;
 use Scheduler\Server\Coroutine\Guard;
-use Scheduler\Container;
+use Scheduler\Infrastructure\Container;
 use Scheduler\Workflow\CoroutineWorkFlow;
 
 /**
@@ -94,14 +94,14 @@ class CoroutineServer extends Server
 
         try {
             /** @var IRouter $router 路由解析*/
-            $router = Container::inst()->make('Router', ['request' => $request]);
+            $router = Container::make('Router', ['request' => $request]);
 
             // 创建工作流并加入到队列中
             Context::workerFlowQueue()->push(new CoroutineWorkFlow($router->workflow(), $router->request()));
             $response->end(json_encode(['code' => 200, 'msg' => 'ok']));
         } catch (\Exception $e) {
             //TODO 记录错误日志
-            print_r($e);
+            print_r($e->getMessage());
 
             $response->status(500);
             $response->end($e->getMessage());
