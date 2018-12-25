@@ -2,6 +2,7 @@
 
 namespace Scheduler\Server;
 
+use Scheduler\Infrastructure\Logger;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Coroutine as co;
 use Swoole\Http\Request;
@@ -36,6 +37,8 @@ class CoroutineServer extends Server
 
         // 初始化进程上下文
         Context::init();
+        // 注入工作流
+        Container::set("Workflow", CoroutineWorkFlow::class);
 
         // 初始化消费端协程(基础消费者协程)
         for ($i = 0; $i < Config::get('co_min_workflow', 5); $i++) {
@@ -85,6 +88,8 @@ class CoroutineServer extends Server
      */
     public function onRequest(Request $request, Response $response)
     {
+        Logger::debug("hello debug");
+
         // 如果消费队列满了，则直接返回错误
         if (Context::workerFlowQueue()->isFull()) {
             $response->status(403);
@@ -96,8 +101,8 @@ class CoroutineServer extends Server
             /** @var IRouter $router 路由解析*/
             $router = Container::make('Router', ['request' => $request]);
 
-            // 创建工作流并加入到队列中
-            Context::workerFlowQueue()->push(new CoroutineWorkFlow($router->workflow(), $router->request()));
+            // 将工作流加入到队列中
+            Context::workerFlowQueue()->push($router->workflow());
             $response->end(json_encode(['code' => 200, 'msg' => 'ok']));
         } catch (\Exception $e) {
             //TODO 记录错误日志

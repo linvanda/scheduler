@@ -41,5 +41,7 @@ return [
     ],
     'mysql' => [
         'host' => '0.0.0.0'
-    ]
+    ],
+    // 日志等级：debug、info、error
+    'log_level' => 'info',
 ];

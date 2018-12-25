@@ -3,11 +3,14 @@
 namespace Scheduler\Server;
 
 use Scheduler\Infrastructure\Container;
+use Scheduler\Infrastructure\Logger;
+use Scheduler\Infrastructure\LoggerCollector;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Scheduler\Utils\Config;
 use Scheduler\Context\GContext;
+use Swoole\Process;
 
 /**
  * 服务器基类
@@ -53,8 +56,6 @@ abstract class Server
 
         // 初始化全局上下文环境
         GContext::init();
-        // 初始化容器
-        Container::init();
 
         $config = Config::get('server');
 
@@ -67,10 +68,29 @@ abstract class Server
             throw new \InvalidArgumentException('请提供 host 和 port 信息');
         }
 
+        // 创建 http 服务器
         $server = new HttpServer($config['host'], $config['port']);
-
         unset($config['host'], $config['port']);
         $server->set($config);
+
+        // 自定义进程：日志收集
+        $loggerProcess = new Process(
+            function (Process $process) use ($server) {
+                // 启用消息队列通讯模式(非阻塞模式)
+                if (!$process->useQueue(null, 2 | Process::IPC_NOWAIT)) {
+                    echo "日志进程创建消息队列失败，服务退出";
+                    $server->shutdown();
+                }
+
+                unset($server);
+
+                // 定时处理日志队列
+                swoole_timer_tick(100, new LoggerCollector($process));
+            },
+            false,
+            0);
+        Logger::init($loggerProcess);
+        $server->addProcess($loggerProcess);
 
         /**
          * 事件注册

@@ -2,6 +2,8 @@
 
 namespace Scheduler\Infrastructure;
 
+use Scheduler\Workflow\WorkFlow;
+
 
 /**
  * 基础路由器
@@ -21,6 +23,7 @@ class Router implements IRouter
      *      ...
      * ]
      * @param string|array|\Swoole\Http\Request $request 原始请求参数
+     * @throws
      */
     public function __construct($request)
     {
@@ -39,18 +42,14 @@ class Router implements IRouter
         }
 
         $this->request = new Request($request['data']);
-        $this->workflow = $request['workflow'];
-
-        if (!$this->workflow) {
-            throw new \InvalidArgumentException("未指定工作流名称:" . print_r($request, true));
-        }
+        $this->workflow = Container::make("Workflow", ["name" => $request['workflow'], 'request' => $this->request]);
     }
 
     /**
-     * 工作流名称
-     * @return string
+     * 工作流
+     * @return WorkFlow
      */
-    public function workflow()
+    public function workflow(): WorkFlow
     {
         return $this->workflow;
     }
@@ -58,7 +57,7 @@ class Router implements IRouter
     /**
      * @return Request
      */
-    public function request()
+    public function request(): Request
     {
         return $this->request;
     }

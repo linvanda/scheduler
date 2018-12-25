@@ -13,7 +13,8 @@
         "ext-swoole": ">=4.2.9",
         "swlib/saber": "^1.0",
         "monolog/monolog": "^1.24",
-        "php-di/php-di": "^6.0"
+        "php-di/php-di": "^6.0",
+        "swiftmailer/swiftmailer": "^6.0"
     },
     "autoload": {
         "psr-4": {

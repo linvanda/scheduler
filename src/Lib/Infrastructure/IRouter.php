@@ -2,6 +2,8 @@
 
 namespace Scheduler\Infrastructure;
 
+use Scheduler\Workflow\WorkFlow;
+
 /**
  * 路由接口
  * Interface IRouter
@@ -19,11 +21,11 @@ interface IRouter
      * 获取请求对象
      * @return Request
      */
-    public function request();
+    public function request(): Request;
 
     /**
      * 工作流名称
-     * @return string
+     * @return WorkFlow
      */
-    public function workflow();
+    public function workflow(): WorkFlow;
 }

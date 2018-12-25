@@ -4,7 +4,8 @@
  * 操作脚本（入口程序）
  */
 
-use Scheduler\Container;
+use Scheduler\Infrastructure\Container;
+use Scheduler\Utils\Config;
 
 error_reporting(E_ERROR);
 
@@ -32,6 +33,20 @@ define('ENV_DEV', 'dev');
 define('ENV_TEST', 'test');
 define('ENV_PREVIEW', 'preview');
 define('ENV_PRODUCTION', 'production');
+
+require_once(ROOT_PATH . '/vendor/autoload.php');
+
+try {
+    define('LOG_LEVEL', Config::get('log_level', 'error'));
+} catch (\Exception $e) {
+    //TODO nothing
+}
+
+// 初始化容器
+try {
+    Container::init();
+} catch (Exception $e) {
+}
 
 $cliOpts = getopt('f', ['start', 'stop', 'restart', 'reload', 'status', 'help', 'debug', 'env:', 'force']);
 list($operation, $env, $debug, $forceStop) = extractOpt($cliOpts);
@@ -77,7 +92,9 @@ function start($env, $debug = false)
     echo "启动服务...\n";
 
     defined('define') or define('ENV', $env);
-    require_once(ROOT_PATH . '/vendor/autoload.php');
+    if ($debug) {
+        defined('DEBUG') or define('DEBUG', 1);
+    }
 
     try {
         Container::make('Server', ['debug' => $debug])->start();

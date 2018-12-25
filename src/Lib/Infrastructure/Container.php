@@ -4,8 +4,10 @@ namespace Scheduler\Infrastructure;
 
 use DI\ContainerBuilder;
 use function DI\create;
+use Monolog\Handler\StreamHandler;
 use Scheduler\Server\CoroutineServer;
 use Scheduler\Utils\Config;
+use \Monolog\Logger;
 
 /**
  * 容器
@@ -23,27 +25,32 @@ class Container
 
     /**
      * 代理方法：get
-     * @param $name
+     * @param string $name
      * @return mixed
      * @throws \DI\DependencyException
      * @throws \DI\NotFoundException
      * @throws \Exception
      */
-    public static function get($name)
+    public static function get(string $name)
     {
         return self::$di->get($name);
     }
 
+    public static function set(string $name, $value)
+    {
+        self::$di->set($name, is_string($value) ? create($value) : $value);
+    }
+
     /**
      * 代理方法：make
-     * @param $name
+     * @param string $name
      * @param $params
      * @return mixed
      * @throws \DI\DependencyException
      * @throws \DI\NotFoundException
      * @throws \Exception
      */
-    public static function make($name, $params)
+    public static function make(string $name, $params)
     {
         return self::$di->make($name, $params);
     }
@@ -73,13 +80,19 @@ class Container
     private static function config()
     {
         return array_map(
-            function ($class) {
-                return create($class);
+            function ($item) {
+                return is_string($item) ? create($item) : $item;
             },
             array_replace(
                 [
                     'Server' => CoroutineServer::class,
-                    'Router' => Router::class
+                    'Router' => Router::class,
+                    'Logger' => function () {
+                        $logger = new Logger("scheduler");
+                        $logger->pushHandler(new StreamHandler(DATA_PATH . '/log/app.log'));
+
+                        return $logger;
+                    }
                 ],
                 Config::di()
             )

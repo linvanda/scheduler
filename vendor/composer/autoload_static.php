@@ -9,6 +9,7 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
     public static $files = array (
         'bd9634f2d41831496de0d3dfe4c94881' => __DIR__ . '/..' . '/symfony/polyfill-php56/bootstrap.php',
         '045cd5d476702c3529ef3e1b9f615e70' => __DIR__ . '/..' . '/swlib/http/src/functions.php',
+        '2c102faa651ef8ea5874edb585946bce' => __DIR__ . '/..' . '/swiftmailer/swiftmailer/lib/swift_required.php',
         '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => __DIR__ . '/..' . '/swlib/saber/src/include/functions.php',
         'b33e3d135e5d9e47d845c576147bda89' => __DIR__ . '/..' . '/php-di/php-di/src/functions.php',
     );
@@ -39,6 +40,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'I' => 
         array (
             'Invoker\\' => 8,
+        ),
+        'E' => 
+        array (
+            'Egulias\\EmailValidator\\' => 23,
         ),
         'D' => 
         array (
@@ -107,6 +112,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             0 => __DIR__ . '/..' . '/php-di/invoker/src',
         ),
+        'Egulias\\EmailValidator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/egulias/email-validator/EmailValidator',
+        ),
         'DI\\' => 
         array (
             0 => __DIR__ . '/..' . '/php-di/php-di/src',
@@ -114,6 +123,16 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'App\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src/App',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'D' => 
+        array (
+            'Doctrine\\Common\\Lexer\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/doctrine/lexer/lib',
+            ),
         ),
     );
 
@@ -127,6 +146,7 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitc574d965ab6ccadf27444802ddafc77b::$classMap;
 
         }, null, ClassLoader::class);

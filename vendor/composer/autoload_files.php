@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'bd9634f2d41831496de0d3dfe4c94881' => $vendorDir . '/symfony/polyfill-php56/bootstrap.php',
     '045cd5d476702c3529ef3e1b9f615e70' => $vendorDir . '/swlib/http/src/functions.php',
+    '2c102faa651ef8ea5874edb585946bce' => $vendorDir . '/swiftmailer/swiftmailer/lib/swift_required.php',
     '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => $vendorDir . '/swlib/saber/src/include/functions.php',
     'b33e3d135e5d9e47d845c576147bda89' => $vendorDir . '/php-di/php-di/src/functions.php',
 );
