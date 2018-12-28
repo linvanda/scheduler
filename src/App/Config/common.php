@@ -40,6 +40,8 @@ return [
         'host' => '192.168.1.45',
     ],
     'mysql' => [
+        // 连接池大小
+        'pool_size' => 30,
         'host' => '0.0.0.0'
     ],
     // 日志等级：debug、info、error

@@ -2,6 +2,7 @@
 
 namespace Scheduler;
 
+use Scheduler\Infrastructure\Logger;
 use Scheduler\Infrastructure\Response\DelayResponse;
 use Scheduler\Infrastructure\Response\FailResponse;
 use Scheduler\Infrastructure\Response\FatalResponse;
@@ -33,6 +34,8 @@ class Controller
      */
     public function handler(string $actionName, Request $request, array $prevResponses = []): Response
     {
+        Logger::debug("开始执行控制器", ['controller' => get_called_class(), 'action' => $actionName]);
+
         if (!method_exists($this, $actionName)) {
             throw new InvalidCallException("类" . get_called_class() . "没有方法{$actionName}");
         }

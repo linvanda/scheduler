@@ -42,10 +42,12 @@ return [
         'step1' =>[
             'action' => 'step1',
             'max_retry_num' => 3,
+            'max_delay_num' => 2,
+            'delay' => 2,
         ],
         'step2' => [
             'conditions' => [
-                'step1' => 0,
+                'step1' => 200,
             ]
         ],
         'step3' => [
@@ -56,10 +58,16 @@ return [
         ],
         'step4' => [
             'conditions' => [
-                'step2' => 0
+                'step2' => 200
             ]
         ],
         'step5' => [
+        ],
+        'step6' => [
+
+        ],
+        'step7' => [
+
         ]
     ],
 ];

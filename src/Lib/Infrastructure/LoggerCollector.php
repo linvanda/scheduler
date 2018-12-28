@@ -2,9 +2,7 @@
 
 namespace Scheduler\Infrastructure;
 
-use Swoole\Process;
-use Monolog\Logger as MonoLogger;
-use Scheduler\Utils\Config;
+use Scheduler\Context\GContext;
 
 /**
  * 日志收集程序
@@ -15,29 +13,25 @@ use Scheduler\Utils\Config;
 class LoggerCollector
 {
     /**
-     * @var Process
-     */
-    protected $process;
-    /**
      * @var Logger
      */
     protected $logger;
 
     /**
      * LoggerCollector constructor.
-     * @param Process $process
      * @throws
      */
-    public function __construct(Process $process)
+    public function __construct()
     {
-        $this->process = $process;
         $this->logger = Container::get('Logger');
     }
 
+    /**
+     * 从通道中取日志数据并记录
+     */
     public function __invoke()
     {
-        if ($data = $this->process->pop()) {
-            $data = json_decode($data, true);
+        if ($data = GContext::loggerChannel()->pop()) {
             $level = $data['level'];
             if (method_exists($this->logger, $level)) {
                 $this->logger->$level($data['message'], $data['context']);

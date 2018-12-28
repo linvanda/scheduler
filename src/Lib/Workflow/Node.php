@@ -3,6 +3,7 @@
 namespace Scheduler\Workflow;
 
 use Scheduler\Controller;
+use Scheduler\Infrastructure\Logger;
 use Scheduler\Infrastructure\Response\FatalResponse;
 use Scheduler\Infrastructure\Request;
 use Scheduler\Infrastructure\Response\NoneResponse;
@@ -74,6 +75,7 @@ class Node
      */
     public function run(Controller $controller, Request $request, array $prevResponse = [])
     {
+        Logger::debug("开始执行节点：{$this->name}");
         $this->pre();
         // 启动控制器
         $this->response = $controller->handler($this->action, $request, $prevResponse);
@@ -178,12 +180,15 @@ class Node
      * 强制失败
      * @param string $errMsg
      * @param string $desc
+     * @param bool $overrideResponse
      */
-    public function fail($errMsg = '', $desc = '')
+    public function fail($errMsg = '', $desc = '', $overrideResponse = false)
     {
-        $this->status = self::STATUS_FAIL;
-        if (!$this->response) {
-            $this->response = new FatalResponse([], $errMsg, $desc);
+        if (!$this->isFinished()) {
+            $this->status = self::STATUS_FAIL;
+            if ($overrideResponse || !$this->response) {
+                $this->response = new FatalResponse([], $errMsg, $desc);
+            }
         }
     }
 
@@ -281,7 +286,7 @@ class Node
             case 3:
                 // 延迟执行
                 if ($this->delayedNum >= $this->maxDelayNum) {
-                    $this->status = self::STATUS_FAIL;
+                    $this->fail('延迟次数超限', $this->response->getMessage(), true);
                 } else {
                     $this->status = self::STATUS_DELAY;
                     $this->nextExecTime = time() + $this->delay;
@@ -290,7 +295,7 @@ class Node
             case 4:
                 // 失败重试
                 if ($this->retriedNum >= $this->maxRetryNum) {
-                    $this->status = self::STATUS_FAIL;
+                    $this->fail('失败重试次数超限', $this->response->getMessage(), true);
                 } else {
                     $this->status = self::STATUS_RETRY;
                     $this->nextExecTime = time() + (self::RETRY_INTERVAL[$this->retriedNum + 1] ?? 0);
@@ -304,6 +309,8 @@ class Node
                 throw new InvalidResponseException("非法的响应结果");
                 break;
         }
+
+        Logger::debug("节点{$this->name}执行后的状态：{$this->status}");
     }
 
     /**

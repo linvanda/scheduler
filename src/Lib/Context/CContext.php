@@ -48,11 +48,6 @@ class CContext
         $this->coNum = 0;
     }
 
-    public function __destruct()
-    {
-        //TODO: 释放外部资源
-    }
-
     /**
      * 销毁某进程上下文
      */

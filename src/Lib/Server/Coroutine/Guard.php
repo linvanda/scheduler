@@ -2,6 +2,8 @@
 
 namespace Scheduler\Server\Coroutine;
 
+use Scheduler\Infrastructure\Logger;
+use Scheduler\Workflow\Node;
 use \Swoole\Coroutine as co;
 use Scheduler\Context\CContext as Context;
 use Scheduler\Workflow\CoroutineWorkFlow;
@@ -59,7 +61,7 @@ class Guard
             $this->pre();
             $workFlow->run();
         } catch (\Exception $e) {
-            //TODO 记录异常日志，并停止该工作流的执行
+            Logger::emergency("工作流执行异常", ['workflow' => $workFlow->name()]);
             $workFlow->fail();
         } finally {
             $this->post($workFlow);
@@ -104,21 +106,29 @@ class Guard
 
         // 根据工作流的状态决定是立即执行下阶段、延迟加入到队列中还是结束
         if ($workFlow->willContinue()) {
-            if ($nextTime = $workFlow->nextExecTime()) {
-                echo "nex time: $nextTime -- ".(time()-$nextTime)."\n";
-                swoole_timer_after($nextTime * 1000, function () use ($workFlow) {
+            if (($waitTime = $workFlow->nextExecTime() - time()) > 1) {
+                Logger::debug("工作流下次执行时间：{$workFlow->nextExecTime()}，将在{$waitTime}秒后再次执行");
+                swoole_timer_after($waitTime * 1000, function () use ($workFlow) {
                     Context::workerFlowQueue()->push($workFlow);
                 });
             } else {
-                echo "now\n";
+                Logger::debug("工作流立即执行下一批次");
                 $this->run($workFlow);
             }
         } else {
             // 工作流执行完成
-            echo "\nwork done。=== {$workFlow->status()}--\n";
-            foreach ($workFlow->nodes() as $nodeName => $node) {
-                echo "node:$nodeName,status:{$node->status()},msg:{$node->response()->getMessage()},desc:{$node->response()->getDesc()}\n\n";
-            }
+            Logger::debug(
+                "工作流{$workFlow->name()}执行完成",
+                [
+                    'nodes' => array_map(function (Node $node) {
+                        return [
+                            'status' => $node->status(),
+                            'msg' => $node->response()->getMessage(),
+                            'desc' => $node->response()->getDesc()
+                        ];
+                    }, $workFlow->nodes())
+                ]
+            );
         }
     }
 
@@ -129,5 +139,6 @@ class Guard
     {
         // 从上下文中移除协程信息
         Context::removeCo($this->cuid);
+        Logger::debug("协程退出:{$this->cuid}");
     }
 }

@@ -7,8 +7,6 @@
 use Scheduler\Infrastructure\Container;
 use Scheduler\Utils\Config;
 
-error_reporting(E_ERROR);
-
 // PHP 版本检测
 if (explode('.', phpversion())[0] < 7) {
     exit("需要 PHP 7.0 或以上版本\n");
@@ -23,6 +21,9 @@ if (explode('.', phpversion('swoole'))[0] < 4) {
 if (phpversion('xdebug')) {
     exit("请关闭 xdebug\n");
 }
+
+error_reporting(E_ERROR);
+date_default_timezone_set('Asia/shanghai');
 
 // 常量定义
 define('ROOT_PATH', dirname(__FILE__));

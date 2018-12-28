@@ -2,7 +2,7 @@
 
 namespace Scheduler\Workflow;
 
-use Scheduler\Infrastructure\Response\FatalResponse;
+use Scheduler\Infrastructure\Logger;
 use Scheduler\Infrastructure\Request;
 use Scheduler\Exception\ClassNotFoundException;
 use Scheduler\Exception\InvalidConfigException;
@@ -81,6 +81,7 @@ abstract class WorkFlow
      */
     public function run()
     {
+        Logger::debug("执行工作流{$this->name()}");
         $this->pre();
         // 执行具体的节点，此方法由子类具体实现
         $this->runNodes();
@@ -140,6 +141,7 @@ abstract class WorkFlow
                 } catch (\Exception $e) {
                     // 将节点设置为执行失败
                     $node->fail($e->getMessage(), $e->getTraceAsString());
+                    Logger::emergency("工作流节点执行异常", ['workflow' => $this->name, 'node' => $node->name(), 'error' => $e->getMessage()]);
                 }
             }
         }
@@ -166,8 +168,11 @@ abstract class WorkFlow
     {
         $this->ttl--;
 
+        // 对于执行完成的节点，需要处理相关节点
+        $this->prepareFinRelNodes();
+
         // 对于延迟执行的节点，需要将依赖该节点的所有节点也设置为延迟执行
-        $this->delayRelationalNodes();
+        $this->delayRelNodes();
 
         $this->status = $this->calcStatus();
 
@@ -175,20 +180,73 @@ abstract class WorkFlow
             // wait 态需要计算 wait 的时间
             $this->nextExecTime = $this->calcNextExecTime();
         }
+
+        Logger::debug("工作流{$this->name}本轮执行完成，状态：{$this->status},下次执行时间：{$this->nextExecTime}");
+    }
+
+    /**
+     * 预处理已完成节点的下层关联节点：检查节点是否需要直接失败掉
+     */
+    protected function prepareFinRelNodes()
+    {
+        $finishedNodes = array_filter(
+            $this->nodes,
+            function (Node $node) {
+                return $node->isFinished();
+            }
+        );
+
+        foreach ($finishedNodes as $node) {
+            $this->failRelNodes($node, $this->nodes);
+        }
     }
 
     /**
      * 节点延迟执行级联处理，将延迟处理的下级相关节点都延迟处理
      */
-    protected function delayRelationalNodes()
+    protected function delayRelNodes()
     {
-        $delayedNodes = array_filter($this->nodes, function (Node $node) {
-            return $node->isDelayed();
-        });
+        $delayedNodes = array_filter(
+                $this->nodes,
+                function (Node $node) {
+                    return $node->isDelayed();
+                }
+            );
 
         foreach ($delayedNodes as $node) {
             foreach ($this->relationalNodes($node, $this->nodes) as $relNode) {
-                $relNode->delayTo($node->nextExecTime());
+                if (!$relNode->isFinished() && $relNode->nextExecTime() < $node->nextExecTime()) {
+                    $relNode->delayTo($node->nextExecTime());
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据完成节点预失败关联节点
+     * @param Node $blockNode
+     * @param $nodePool
+     */
+    protected function failRelNodes(Node $blockNode, $nodePool)
+    {
+        static $tick = 0;
+
+        if (!$nodePool || !$blockNode || !$blockNode->isFinished()) {
+            return;
+        }
+
+        // 调用深度控制，防止因循环依赖而导致无限调用
+        if ($tick++ > 1000) {
+            Logger::warning("too deep call");
+            return;
+        }
+
+        foreach ($nodePool as $key => $node) {
+            if (!$node->isFinished() && $node->willBeBlocked($blockNode)) {
+                // 被阻塞，强制失败
+                Logger::warning("前置条件无法满足，强制失败", ['node' => $node->name(), 'relnode' => $blockNode->name()]);
+                $node->fail("前置条件无法满足，强制失败", "相关节点：{$blockNode->name()}", true);
+                $this->failRelNodes($node, $nodePool);
             }
         }
     }
@@ -252,12 +310,12 @@ abstract class WorkFlow
      */
     protected function calcNextExecTime()
     {
-        $waitTime = PHP_INT_MAX;
+        $nextTime = PHP_INT_MAX;
         foreach ($this->nodes as $node) {
-            $waitTime = min($waitTime, $node->nextExecTime());
+            $nextTime = min($nextTime, $node->nextExecTime());
         }
 
-        return $waitTime;
+        return $nextTime;
     }
 
     /**
@@ -447,9 +505,12 @@ abstract class WorkFlow
      */
     private function hasLoopDependence(array $cfg)
     {
-        $dependences = array_map(function ($item) {
-            return $item['conditions'] ? array_keys($item['conditions']) : [];
-        }, $cfg['nodes']);
+        $dependences = array_map(
+            function ($item) {
+                return $item['conditions'] ? array_keys($item['conditions']) : [];
+            },
+            $cfg['nodes']
+        );
 
         foreach (array_keys($dependences) as $nodeName) {
             if ($this->isLoopDepend($nodeName, $dependences)) {

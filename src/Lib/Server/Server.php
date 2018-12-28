@@ -5,6 +5,7 @@ namespace Scheduler\Server;
 use Scheduler\Infrastructure\Container;
 use Scheduler\Infrastructure\Logger;
 use Scheduler\Infrastructure\LoggerCollector;
+use Scheduler\Infrastructure\StatsCollector;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -28,6 +29,7 @@ abstract class Server
      * Server constructor.
      * @param int $debug
      * @throws \Scheduler\Exception\FileNotFoundException
+     * @throws \Exception
      */
     public function __construct($debug = 0)
     {
@@ -74,23 +76,22 @@ abstract class Server
         $server->set($config);
 
         // 自定义进程：日志收集
-        $loggerProcess = new Process(
-            function (Process $process) use ($server) {
-                // 启用消息队列通讯模式(非阻塞模式)
-                if (!$process->useQueue(null, 2 | Process::IPC_NOWAIT)) {
-                    echo "日志进程创建消息队列失败，服务退出";
-                    $server->shutdown();
-                }
-
-                unset($server);
-
-                // 定时处理日志队列
-                swoole_timer_tick(100, new LoggerCollector($process));
+        $server->addProcess(new Process(
+            function (Process $process) {
+                swoole_timer_tick(50, new LoggerCollector());
             },
             false,
-            0);
-        Logger::init($loggerProcess);
-        $server->addProcess($loggerProcess);
+            0
+        ));
+
+        // 自定义进程：系统状态数据收集
+        $server->addProcess(new Process(
+            function (Process $process) {
+                swoole_timer_tick(1000, new StatsCollector());
+            },
+            false,
+            0
+        ));
 
         /**
          * 事件注册
@@ -117,13 +118,16 @@ abstract class Server
 
     public function onShutdown(HttpServer $server)
     {
-
     }
 
-    public function onWorkerError(HttpServer $server)
+    public function onWorkerError(HttpServer $server, int $workerId, int $workerPid, int $exitCode, int $signal)
     {
-        // 记录错误日志
-        echo "work error==";
+        Logger::error('进程异常退出', [
+           'worker_id' => $workerId,
+            'worker_pid' => $workerPid,
+            'exit_code' => $exitCode,
+            'signal' => $signal
+        ]);
     }
 
     /**

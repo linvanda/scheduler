@@ -57,6 +57,8 @@ class CoroutineServer extends Server
                 for ($i = 0; $i < $willCreatNum; $i++) {
                     co::create((new Guard())->create(Config::get('co_timeout', 60)));
                 }
+
+                Logger::debug("动态增加协程数：{$willCreatNum}");
             }
         });
     }
@@ -88,12 +90,15 @@ class CoroutineServer extends Server
      */
     public function onRequest(Request $request, Response $response)
     {
-        Logger::debug("hello debug");
+        Logger::debug("请求到来:", ['request' => $request->rawcontent()]);
 
         // 如果消费队列满了，则直接返回错误
         if (Context::workerFlowQueue()->isFull()) {
             $response->status(403);
             $response->end("workflow queue is full");
+
+            Logger::error("消费队列满了，拒绝请求");
+
             return;
         }
 
@@ -101,12 +106,13 @@ class CoroutineServer extends Server
             /** @var IRouter $router 路由解析*/
             $router = Container::make('Router', ['request' => $request]);
 
+            Logger::debug("将工作流{$router->workflow()->name()}加入到消费队列中");
+
             // 将工作流加入到队列中
             Context::workerFlowQueue()->push($router->workflow());
             $response->end(json_encode(['code' => 200, 'msg' => 'ok']));
         } catch (\Exception $e) {
-            //TODO 记录错误日志
-            print_r($e->getMessage());
+            Logger::emergency("请求解析异常", ['msg' => $e->getMessage()]);
 
             $response->status(500);
             $response->end($e->getMessage());

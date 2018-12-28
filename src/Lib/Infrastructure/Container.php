@@ -88,7 +88,7 @@ class Container
                     'Server' => CoroutineServer::class,
                     'Router' => Router::class,
                     'Logger' => function () {
-                        $logger = new Logger("scheduler");
+                        $logger = new Logger("app");
                         $logger->pushHandler(new StreamHandler(DATA_PATH . '/log/app.log'));
 
                         return $logger;

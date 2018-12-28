@@ -1,7 +1,8 @@
 <?php
 
 namespace Scheduler\Infrastructure;
-use Swoole\Process;
+use Scheduler\Context\GContext;
+use Swoole\Coroutine;
 
 /**
  * 日志包装器
@@ -12,15 +13,6 @@ use Swoole\Process;
 class Logger
 {
     const MAX_MSG_LENGTH = 32 * 1024 * 1024;
-
-    /**
-     * @var Process
-     */
-    private static $process;
-
-    public static function init(Process $process) {
-        self::$process = $process;
-    }
 
     public static function debug($message, array $context = [])
     {
@@ -63,6 +55,8 @@ class Logger
     }
 
     /**
+     * 记录日志：直接发送到全局的日志队列中
+     * 协程环境下，如果发送失败（通道满了），则进入协程等待，非协程环境则直接返回（此时sleep会阻塞整个进程）
      * @param string $level
      * @param string $message 长度不超过 32k
      * @param array $context
@@ -77,10 +71,21 @@ class Logger
             $context = [];
         }
 
-        self::$process->push(json_encode([
-            'level' => $level,
-            'message' => $message,
-            'context' => $context
-        ], JSON_UNESCAPED_UNICODE));
+        $retry = Coroutine::getuid() < 0 ? 0 : 3;
+
+        $i = 0;
+        do {
+            $result = GContext::loggerChannel()->push([
+                'level' => $level,
+                'message' => $message,
+                'context' => $context
+            ]);
+
+            if (!$result && $retry) {
+                Coroutine::sleep(1);
+            } else {
+                break;
+            }
+        } while ($i++ < $retry);
     }
 }

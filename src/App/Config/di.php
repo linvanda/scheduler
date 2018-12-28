@@ -3,7 +3,6 @@
 use \Monolog\Logger;
 use \Monolog\Handler\StreamHandler;
 use \Monolog\Handler\SwiftMailerHandler;
-use \Monolog\Formatter\HtmlFormatter;
 
 /**
  * 依赖注入配置
@@ -14,10 +13,10 @@ return [
     'Server' => Scheduler\Server\CoroutineServer::class,
     // 符合 PSR-3 的日志实例
     'Logger' => function () {
-        $logger = new Logger('scheduler');
+        $logger = new Logger('app');
 
         $handlers = [];
-        $handlers[] = DEBUG ? new StreamHandler(STDOUT, Logger::DEBUG) : new StreamHandler(DATA_PATH . '/log/app.log', Logger::DEBUG);
+        $handlers[] = new StreamHandler(DATA_PATH . '/log/app.debug.log', Logger::DEBUG);
         $handlers[] = new StreamHandler(DATA_PATH . '/log/app.info.log', Logger::INFO);
         $handlers[] = new StreamHandler(DATA_PATH . '/log/app.error.log', Logger::ERROR);
 
@@ -25,10 +24,15 @@ return [
         $trans->setUsername("robot@weicheche.cn")->setPassword("Chechewei123");
         $mailer = new Swift_Mailer($trans);
         $messager = new Swift_Message("test subject");
-        $messager->setFrom(["robot@weicheche.cn" => "from"])->setTo(["songlin.zhang@weicheche.cn"]);
+        $messager->setFrom(["robot@weicheche.cn" => "喂车科技"])->setTo(["songlin.zhang@weicheche.cn"])->setSubject('工作流调度系统告警');
         $emailHandler = new SwiftMailerHandler($mailer, $messager, Logger::CRITICAL);
-        $emailHandler->setFormatter(new HtmlFormatter("Y-m-d H:i:s"));
         $handlers[] = $emailHandler;
+
+        // debug 模式下，在最上层加上 debug handler 打印所有日志到控制台
+        if (defined('DEBUG') && DEBUG) {
+            unset($handlers[0]);
+            $handlers[] = new StreamHandler(STDOUT);
+        }
 
         $levelArr = [
             'debug' => Logger::DEBUG,

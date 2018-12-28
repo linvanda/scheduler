@@ -2,6 +2,7 @@
 
 namespace Scheduler\Workflow;
 
+use Scheduler\Infrastructure\Logger;
 use Scheduler\Utils\Config;
 use Swoole\Coroutine\Channel;
 use Scheduler\Infrastructure\Request;
@@ -82,6 +83,7 @@ class CoroutineWorkFlow extends WorkFlow
             } catch (\Exception $e) {
                 // 将节点设置为执行失败
                 $node->fail($e->getMessage(), $e->getTraceAsString());
+                Logger::emergency("节点执行异常", ['workflow' => $this->name, 'node' => $node->name(), 'error' => $e->getMessage()]);
             } finally {
                 // 发送完成信号
                 $this->waitChannel->push(1);
