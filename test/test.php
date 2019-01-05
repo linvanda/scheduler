@@ -44,11 +44,10 @@ co::create(function () {
        throw new \Exception('mysql连接出错：'.$mysql->connect_errno);
    }
 
-    /**
-     * @var Swoole\Coroutine\Mysql\Statement
-     */
-   $stmt = $mysql->prepare("select * from wei_users where uid=?");
-   var_dump($stmt);
+    $result = $mysql->query("select * from wei_sl_test");
+   echo "jieguo:";
+   var_export($result);
+   echo $mysql->affected_rows;
 });
 
 
