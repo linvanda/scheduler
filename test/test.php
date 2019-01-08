@@ -38,16 +38,18 @@ co::create(function () {
        'database' => 'weicheche',
        'timeout' => 3,
        'charset' => 'utf8',
+       'fetch_mode' => true,
    ]);
 
-   if (!$conn) {
-       throw new \Exception('mysql连接出错：'.$mysql->connect_errno);
-   }
+    $st = $mysql->prepare("select * from wei_users limit 100000");
+    $result = $st->execute();
 
-    $result = $mysql->query("select * from wei_sl_test");
-   echo "jieguo:";
-   var_export($result);
-   echo $mysql->affected_rows;
+    echo "mem:" . (memory_get_usage()/1024/1024)."M\n";
+
+//    while ($re = $st->fetch()) {
+//        var_export($re);
+//        echo "\n";
+//        sleep(2);
+//    }
 });
-
 

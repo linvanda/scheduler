@@ -1,6 +1,6 @@
 <?php
 
-namespace Scheduler\Infrastructure\Mysql;
+namespace Scheduler\Infrastructure\MySQL;
 
 use Swoole\Coroutine as co;
 use Scheduler\Utils\Config;
@@ -8,7 +8,7 @@ use Scheduler\Utils\Config;
 /**
  * 协程版连接池
  * Class CoPool
- * @package Scheduler\Infrastructure\Mysql
+ * @package Scheduler\Infrastructure\MySQL
  */
 class CoPool implements IPool
 {
@@ -29,22 +29,22 @@ class CoPool implements IPool
     protected function __construct()
     {
         if (co::getuid() < 0) {
-            throw new \Exception("请在协程环境中使用 Mysql 协程连接池");
+            throw new \Exception("请在协程环境中使用 MySQL 协程连接池");
         }
 
-        $this->readPool = new co\Channel(Config::get('mysql.pool_size', 10));
-        $this->writePool = new co\Channel(Config::get('mysql.pool_size'));
+        $this->readPool = new co\Channel(Config::get('mysql.pool_size', 20));
+        $this->writePool = new co\Channel(Config::get('mysql.pool_size', 20));
         $this->connectNum = 0;
     }
 
     /**
-     * 从连接池中获取 Mysql 连接对象
+     * 从连接池中获取 MySQL 连接对象
      * @param string $type
-     * @return Connector
+     * @return IConnector
      * @throws \Exception
      * @throws \Scheduler\Exception\FileNotFoundException
      */
-    public function getConnector($type = 'write'): Connector
+    public function getConnector($type = 'write'): IConnector
     {
         $pool = $this->getPool($type);
         if ($pool->isEmpty() && $this->connectNum < $pool->capacity) {
@@ -58,10 +58,10 @@ class CoPool implements IPool
 
     /**
      * 归还连接
-     * @param Connector $connector
+     * @param IConnector $connector
      * @param string $type
      */
-    public function pushConnector(Connector $connector, $type = 'write')
+    public function pushConnector(IConnector $connector, $type = 'write')
     {
         $pool = $this->getPool($type);
 
@@ -106,9 +106,7 @@ class CoPool implements IPool
             $config['database'],
             $config['port'] ?: 3306,
             $config['timeout'] ?: 3,
-            $config['charset'] ?: 'utf8',
-            true,
-            true
+            $config['charset'] ?: 'utf8'
         );
     }
 }

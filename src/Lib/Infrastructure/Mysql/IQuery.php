@@ -1,11 +1,12 @@
 <?php
 
-namespace Scheduler\Infrastructure\Mysql;
+namespace Scheduler\Infrastructure\MySQL;
 
 /**
  * 执行器
+ * 每次调用 query 或 execute 时从 Pool 中获取连接对象，执行完成后释放连接对象
  * Interface IQuery
- * @package Scheduler\Infrastructure\Mysql
+ * @package Scheduler\Infrastructure\MySQL
  */
 interface IQuery
 {
@@ -30,7 +31,7 @@ interface IQuery
     public function rollback(): bool;
 
     /**
-     * 查询数据并返回结果集数组
+     * 查询数据并返回结果集数组（如果开启了事务且 $commitTogether = true，则 query 不会返回数据结果集）
      * @param string $preSql
      * @param array $params
      * @return array
@@ -38,15 +39,7 @@ interface IQuery
     public function query(string $preSql, array $params = []): array;
 
     /**
-     * 查询数据并返回 FlashCollection，主要针对批处理等任务一次返回超大结果集导致内存溢出的，采用 fetch 模式一次只取出一行处理
-     * @param string $preSql
-     * @param array $params
-     * @return FlashCollection
-     */
-    public function fetch(string $preSql, array $params = []);
-
-    /**
-     * 执行 SQL 并返回影响行数（如果 commitTogether 为 true 则返回 null）
+     * 执行 SQL 并返回影响行数（如果 $commitTogether 为 true 则返回 true|false）
      * @param string $preSql
      * @param array $params
      * @return int|null

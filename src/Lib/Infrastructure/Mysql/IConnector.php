@@ -1,16 +1,15 @@
 <?php
 
-namespace Scheduler\Infrastructure\Mysql;
+namespace Scheduler\Infrastructure\MySQL;
 
 /**
- * 驱动接口
- * Interface IDriver
- * @package Scheduler\Infrastructure\Mysql
+ * 连接器接口
+ * Interface IConnector
+ * @package Scheduler\Infrastructure\MySQL
  */
-interface IDriver
+interface IConnector
 {
     /**
-     * 连接数据库
      * @param string $host
      * @param string $user
      * @param string $password
@@ -18,19 +17,22 @@ interface IDriver
      * @param int $port
      * @param int $timeout
      * @param string $charset
-     * @param bool $fetchMode
-     * @return bool 成功 true，失败 false
      */
-    public function connect(
+    public function __construct(
         string $host,
         string $user,
         string $password,
         string $database,
         int $port = 3306,
         int $timeout = 3,
-        string $charset = 'utf8',
-        bool $fetchMode = false
-    ): bool;
+        string $charset = 'utf8'
+    );
+
+    /**
+     * 连接数据库
+     * @return bool 成功 true，失败 false
+     */
+    public function connect(): bool;
 
     /**
      * 关闭连接
@@ -39,24 +41,14 @@ interface IDriver
 
     /**
      * 执行 SQL
-     * @param string $sql 预处理 SQL，占位符用 :name 这种格式
+     * $sql 格式：select * from t_name where uid=:uid
+     * @param string $sql 预处理 SQL，占位符用 :name 这种格式。['uid' => $uid]
      * @param array $params 参数
      * @param bool $prepare 是否使用 prepare 模式
-     * @return array|bool 如果是查询语句，则返回结果集，否则（包括失败）返回 bool
+     * @param int $timeout 查询超时时间，默认 2 分钟
+     * @return mixed 失败返回 false；成功：查询返回数组，否则返回 true
      */
-    public function query(string $sql, array $params, bool $prepare = true);
-
-    /**
-     * fetch 一行数据
-     * @return array
-     */
-    public function fetch(): array;
-
-    /**
-     * fetch 整个结果集
-     * @return array
-     */
-    public function fetchAll(): array;
+    public function query(string $sql, array $params, bool $prepare = true, int $timeout = 120);
 
     /**
      * SQL 执行影响的行数，针对命令型 SQL
@@ -77,8 +69,8 @@ interface IDriver
     public function lastErrorNo(): int;
 
     /**
-     * 连接错误码
-     * @return int
+     * 错误信息
+     * @return string
      */
-    public function lastConnectErrorNo(): int;
+    public function lastError(): string;
 }

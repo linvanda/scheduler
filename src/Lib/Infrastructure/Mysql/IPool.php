@@ -1,26 +1,26 @@
 <?php
 
-namespace Scheduler\Infrastructure\Mysql;
+namespace Scheduler\Infrastructure\MySQL;
 
 /**
  * 连接池
  * Interface IPool
- * @package Scheduler\Infrastructure\Mysql
+ * @package Scheduler\Infrastructure\MySQL
  */
  interface IPool
  {
      /**
-      * 从连接池中获取 Mysql 连接对象
+      * 从连接池中获取 MySQL 连接对象
       * @param string $type
-      * @return mixed|Connector
+      * @return IConnector
       * @throws \Exception
       * @throws \Scheduler\Exception\FileNotFoundException
       */
-    public function getConnector($type = 'write'): Connector;
+    public function getConnector($type = 'write'): IConnector;
      /**
       * 归还连接
-      * @param Connector $connector
+      * @param IConnector $connector
       * @param string $type
       */
-     public function pushConnector(Connector $connector, $type = 'write');
+     public function pushConnector(IConnector $connector, $type = 'write');
  }
