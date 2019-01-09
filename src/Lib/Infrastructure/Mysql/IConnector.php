@@ -44,11 +44,10 @@ interface IConnector
      * $sql 格式：select * from t_name where uid=:uid
      * @param string $sql 预处理 SQL，占位符用 :name 这种格式。['uid' => $uid]
      * @param array $params 参数
-     * @param bool $prepare 是否使用 prepare 模式
      * @param int $timeout 查询超时时间，默认 2 分钟
      * @return mixed 失败返回 false；成功：查询返回数组，否则返回 true
      */
-    public function query(string $sql, array $params, bool $prepare = true, int $timeout = 120);
+    public function query(string $sql, array $params, int $timeout = 120);
 
     /**
      * SQL 执行影响的行数，针对命令型 SQL
@@ -58,9 +57,9 @@ interface IConnector
 
     /**
      * 最后插入的记录 id
-     * @return mixed
+     * @return int
      */
-    public function insertId();
+    public function insertId(): int;
 
     /**
      * 最后的错误码

@@ -38,18 +38,34 @@ co::create(function () {
        'database' => 'weicheche',
        'timeout' => 3,
        'charset' => 'utf8',
-       'fetch_mode' => true,
+//       'fetch_mode' => true,
    ]);
 
-    $st = $mysql->prepare("select * from wei_users limit 100000");
-    $result = $st->execute();
+    $res = $mysql->prepare("insert into wei_sl_test2(id,nickname) values(?,?)");
+    $res = $res->execute([md5(time()), '"ceshi\'']);
 
-    echo "mem:" . (memory_get_usage()/1024/1024)."M\n";
-
-//    while ($re = $st->fetch()) {
-//        var_export($re);
-//        echo "\n";
-//        sleep(2);
-//    }
+    echo "err:{$mysql->insert_id};result:".print_r($res, true)."\n";
 });
 
+//
+//$servername = "192.168.85.135";
+//$username = "root";
+//$password = "weicheche";
+//$dbname = "weicheche";
+//
+//// 创建链接
+//$conn = new mysqli($servername, $username, $password, $dbname);
+//// 检查链接
+//if ($conn->connect_error) {
+//    die("连接失败: " . $conn->connect_error);
+//}
+//
+//$sql = "insert into wei_sl_test(nickname) values('阿法===r');insert into wei_sl_test(nickname) values('阿法===r');select * from  wei_sl_test";
+//
+//if ($conn->multi_query($sql) === TRUE) {
+//    echo "新记录插入成功";
+//} else {
+//    echo "Error: " . $sql . "<br>" . $conn->error;
+//}
+//
+//$conn->close();

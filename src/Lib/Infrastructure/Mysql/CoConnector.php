@@ -65,16 +65,13 @@ class CoConnector implements IConnector
      * 对于有 $params的 SQL，强制走 prepare
      * @param string $sql
      * @param array $params
-     * @param bool $prepare
      * @param int $timeout
      * @return mixed
      * @throws \Exception
      */
-    public function query(string $sql, array $params, bool $prepare = true, int $timeout = 120)
+    public function query(string $sql, array $params, int $timeout = 120)
     {
-        if ($params && !$prepare) {
-            $prepare = true;
-        }
+        $prepare = $params ? true : false;
 
         if ($prepare) {
             list($sql, $params) = $this->formatPrepareSQL($sql, $params);
@@ -114,9 +111,9 @@ class CoConnector implements IConnector
 
     /**
      * 最后插入的记录 id
-     * @return mixed
+     * @return int
      */
-    public function insertId()
+    public function insertId(): int
     {
         return $this->mysql->insert_id;
     }
@@ -166,7 +163,7 @@ class CoConnector implements IConnector
             $p[] = $params[$flag];
         }
 
-        $sql = preg_replace('/:[^\s;]+/', '?', $sql);
+        $sql = preg_replace('/:[a-zA-Z0-9_-]+/', '?', $sql);
 
         return [$sql, $p];
     }
