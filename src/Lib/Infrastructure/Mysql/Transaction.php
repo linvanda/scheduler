@@ -62,6 +62,10 @@ class Transaction
      */
     public function command(string $preSql, array $params = [])
     {
+        if (!$preSql) {
+            return false;
+        }
+
         // 如果当前不在事务中，则开启一个事务（隐式事务）
         $isImplicit = !$this->isRunning;
 
@@ -161,6 +165,14 @@ class Transaction
     }
 
     /**
+     * @return IConnector
+     */
+    public function connector()
+    {
+        return $this->connector;
+    }
+
+    /**
      * 释放事务资源
      */
     private function releaseTransResource()
@@ -183,44 +195,9 @@ class Transaction
             return true;
         }
 
-        $result = $this->getConnector()->query(...$this->prepareSql($this->commandPool));
-
-        // 执行完毕后清空指令池
-        $this->commandPool = [];
+        $result = $this->getConnector()->query(...array_shift($this->commandPool));
 
         return $result;
-    }
-
-    /**
-     * 根据指令池组装 SQL
-     * 注意：该方法支持批量 SQL 执行（多个 SQL 用 ; 隔开），但 swoole 的 MySQL 库目前不支持该特性，因而该类目前并没有使用该特性
-     * @param array $commandPool
-     * @return array
-     */
-    private function prepareSql(array $commandPool): array
-    {
-        $sql = '';
-        $params = [];
-        foreach ($commandPool as $command) {
-            if (!$command[0]) {
-                continue;
-            }
-
-            if ($command[1]) {
-                // 增加额外后缀防止重复
-                $i = 0;
-                foreach ($command[1] as $k => $p) {
-                    $ik = $k . "_$i";
-                    $params[$ik] = $p;
-                    $command[0] = preg_replace("/:{$k}(?=[^a-zA-Z0-9_-]|$)/", ":$ik", $command[0]);
-                    $i++;
-                }
-            }
-
-            $sql .= $command[0] . ';';
-        }
-
-        return [$sql, $params];
     }
 
     /**

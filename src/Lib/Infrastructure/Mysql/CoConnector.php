@@ -74,8 +74,6 @@ class CoConnector implements IConnector
         $prepare = $params ? true : false;
 
         if ($prepare) {
-            list($sql, $params) = $this->formatPrepareSQL($sql, $params);
-
             $statement = $this->mysql->prepare($sql, $timeout);
 
             if ($statement === false && $this->tryReconnectForQueryFail()) {
@@ -130,42 +128,6 @@ class CoConnector implements IConnector
     public function lastError(): string
     {
         return $this->mysql->error;
-    }
-
-    /**
-     * @param string $sql 格式：select * from t_name where uid=:uid
-     * @param array $params 格式：['uid' => $uid]
-     * @return array 输出格式：sql: select * from t_name where uid=?，params: [$uid]
-     * @throws \Exception
-     */
-    private function formatPrepareSQL(string $sql, array $params)
-    {
-        if (!$params) {
-            return [$sql, []];
-        }
-
-        preg_match_all('/:([^\s;]+)/', $sql, $matches);
-
-        if (!($matches = $matches[1])) {
-            return [$sql, []];
-        }
-
-        if (count($matches) !== count($params)) {
-            throw new \Exception("SQL 占位数与参数个数不符。SQL:$sql,参数：" . print_r($params, true));
-        }
-
-        $p = [];
-        foreach ($matches as $flag) {
-            if (!$params[$flag]) {
-                throw new \Exception("SQL 占位符与参数不符。SQL:$sql,参数：" . print_r($params, true));
-            }
-
-            $p[] = $params[$flag];
-        }
-
-        $sql = preg_replace('/:[a-zA-Z0-9_-]+/', '?', $sql);
-
-        return [$sql, $p];
     }
 
     /**

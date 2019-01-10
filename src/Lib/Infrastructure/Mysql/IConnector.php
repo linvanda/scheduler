@@ -41,8 +41,8 @@ interface IConnector
 
     /**
      * 执行 SQL
-     * $sql 格式：select * from t_name where uid=:uid
-     * @param string $sql 预处理 SQL，占位符用 :name 这种格式。['uid' => $uid]
+     * $sql 格式：select * from t_name where uid=?
+     * @param string $sql 预处理 SQL
      * @param array $params 参数
      * @param int $timeout 查询超时时间，默认 2 分钟
      * @return mixed 失败返回 false；成功：查询返回数组，否则返回 true

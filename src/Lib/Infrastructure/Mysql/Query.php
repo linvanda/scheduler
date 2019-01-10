@@ -2,8 +2,15 @@
 
 namespace Scheduler\Infrastructure\MySQL;
 
+/**
+ * 查询器，对外暴露的 API
+ * Class Query
+ * @package Scheduler\Infrastructure\MySQL
+ */
 class Query
 {
+    use Builder;
+
     private $transaction;
 
     /**
@@ -46,89 +53,77 @@ class Query
     }
 
     /**
-     * 查询
-     * @param string $preSql
-     * @param array $params
-     * @return array 二维数组列表
-     */
-    public function query(string $preSql, array $params = []): array
-    {
-        return $this->transaction->command($preSql, $params);
-    }
-
-    /**
-     * 命令
-     * @param string $preSql
-     * @param array $params
-     * @return int 影响的行数
-     */
-    public function execute(string $preSql, array $params = []): int
-    {
-        return $this->transaction->command($preSql, $params);
-    }
-
-    /**
-     * 便捷方法：查询列表
-     * @param string $table
-     * @param array $where
-     * @param string $fields
-     * @param array $join
+     * 便捷方法：列表查询
      * @return array
+     * @throws \Exception
      */
-    public function find(string $table, $where = [], $fields = '*', $join = []): array
+    public function list(): array
     {
-
+        return $this->transaction->command(...$this->compile());
     }
 
     /**
      * 便捷方法：查询一行记录
-     * @param string $table
-     * @param array $where
-     * @param string $fields
-     * @return array
+     * @return array|false
+     * @throws \Exception
      */
-    public function findOne(string $table, $where = [], $fields = '*'): array
+    public function one(): array
     {
+        $list = $this->transaction->command(...$this->limit(1)->compile());
 
+        if ($list === false) {
+            return false;
+        }
+
+        if ($list) {
+            return $list[0];
+        }
+
+        return [];
+    }
+
+    /**
+     * 便捷方法：查询某个字段的值
+     * @return mixed
+     */
+    public function column()
+    {
+        $res = $this->transaction->command(...$this->compile());
+
+        if ($res === false) {
+            return false;
+        }
+
+        return $res ? reset($res[0]) : '';
     }
 
     /**
      * 便捷方法：分页查询
-     * @param string $table
-     * @param array $where
-     * @param string $fields
-     * @param int $page
-     * @param int $pageSize
-     * @param array $join
-     * @return array
+     * @return array|false
      */
-    public function pageList(string $table, $where = [], $fields = '*', $page = 0, $pageSize = 20, $join = []): array
+    public function page(): array
     {
+        $fields = $this->fields;
+        $limit = $this->limit;
 
-    }
+        $countRes = $this->transaction->command(...$this->fields('count(*) as cnt')->reset('limit')->compile(false));
 
-    /**
-     * 便捷方法：插入一行数据
-     * @param string $table
-     * @param array $data 一维数组
-     * @param bool $replace true 表示使用 replace into ...
-     * @return int 插入的行数
-     */
-    public function insert(string $table, array $data, bool $replace = false): int
-    {
+        if ($countRes === false) {
+            return false;
+        }
 
-    }
+        if (!$countRes || !$countRes[0]['cnt']) {
+            $this->reset();
+            return ['total' => 0, 'data' => []];
+        }
 
-    /**
-     * 便捷方法：批量插入
-     * @param string $table
-     * @param array $data
-     * @param bool $replace true 表示使用 replace into ...
-     * @return int 插入的行数
-     */
-    public function multiInsert(string $table, array $data, bool $replace = false): int
-    {
+        $data = $this->transaction->command(...$this->fields($fields)->limit($limit)->compile());
 
+        if ($data === false) {
+            return false;
+        }
+
+        return ['total' => $countRes['cnt'], 'data' => $data];
     }
 
     /**
@@ -138,29 +133,35 @@ class Query
      */
     public function lastInsertId(): int
     {
+        return $this->transaction->connector()->insertId();
+    }
 
+    public function error(): string
+    {
+        return $this->transaction->connector()->lastError();
+    }
+
+    public function errorNo(): int
+    {
+        return $this->transaction->connector()->lastErrorNo();
     }
 
     /**
-     * 便捷方法：更新数据
-     * @param string $table
-     * @param array $data
-     * @param $where
-     * @return int 更新行数
+     * 执行 SQL
+     * 有两种方式：
+     *  1. 调此方法时传入相关参数；
+     *  2. 通过 Builder 提供的 Active Record 方法组装 SQL，调此方法（不传参数）执行并返回结果
+     * @param string $preSql
+     * @param array $params
+     * @return int|array 影响的行数|数据集
+     * @throws \Exception
      */
-    public function update(string $table, array $data, $where): int
+    public function execute(string $preSql = '', array $params = [])
     {
+        if (!func_num_args()) {
+            return $this->transaction->command(...$this->compile());
+        }
 
-    }
-
-    /**
-     * 便捷方法：删除数据
-     * @param string $table
-     * @param $where
-     * @return int
-     */
-    public function delete(string $table, $where): int
-    {
-
+        return $this->transaction->command(...$this->prepareSQL($preSql, $params));
     }
 }

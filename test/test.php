@@ -27,25 +27,36 @@ require(ROOT_PATH . '/vendor/autoload.php');
 co::set([
     'log_level' => SWOOLE_LOG_ERROR
 ]);
-
-co::create(function () {
-   $mysql = new Swoole\Coroutine\MySQL();
-   $conn = $mysql->connect([
-       'host' => '192.168.85.135',
-       'port' => 3306,
-       'user' => 'root',
-       'password' => 'weicheche',
-       'database' => 'weicheche',
-       'timeout' => 3,
-       'charset' => 'utf8',
-//       'fetch_mode' => true,
-   ]);
-
-    $res = $mysql->prepare("insert into wei_sl_test2(id,nickname) values(?,?)");
-    $res = $res->execute([md5(time()), '"ceshi\'']);
-
-    echo "err:{$mysql->insert_id};result:".print_r($res, true)."\n";
-});
+//
+//co::create(function () {
+//   $mysql = new Swoole\Coroutine\MySQL();
+//   $conn = $mysql->connect([
+//       'host' => '192.168.85.135',
+//       'port' => 3306,
+//       'user' => 'root',
+//       'password' => 'weicheche',
+//       'database' => 'weicheche',
+//       'timeout' => 3,
+//       'charset' => 'utf8',
+////       'fetch_mode' => true,
+//   ]);
+//
+//    $builder = new \Scheduler\Infrastructure\MySQL\Builder();
+//
+//    $v = $builder
+//        ->delete('wei_sl_test')
+//        ->where(['id' => 34])
+//        ->compile();
+//
+//    var_export($v);
+//    echo "\n";
+//
+//    $res = $mysql->prepare($v[0]);
+//
+//    $res = $res->execute($v[1]);
+//
+//    echo "err:{$mysql->error};result:".print_r($res, true)."\n";
+//});
 
 //
 //$servername = "192.168.85.135";
@@ -69,3 +80,41 @@ co::create(function () {
 //}
 //
 //$conn->close();
+
+trait A
+{
+    private $name = 'AAA';
+
+    public function say()
+    {
+        return $this;
+    }
+
+    protected function w()
+    {
+        echo "www";
+    }
+
+    private function t()
+    {
+        echo 'tttt';
+    }
+}
+
+class B
+{
+    use A;
+
+    public function bbb()
+    {
+        echo $this->name;
+    }
+
+    public function def($name = '')
+    {
+        echo func_get_arg(0);
+    }
+}
+
+$b = new B;
+$b->def('dfd');
