@@ -2,13 +2,13 @@
 
 namespace Scheduler;
 
-use Scheduler\Infrastructure\Logger;
-use Scheduler\Infrastructure\Response\DelayResponse;
-use Scheduler\Infrastructure\Response\FailResponse;
-use Scheduler\Infrastructure\Response\FatalResponse;
-use Scheduler\Infrastructure\Response\OkResponse;
-use Scheduler\Infrastructure\Request;
-use Scheduler\Infrastructure\Response\Response;
+use Scheduler\Fundation\Logger;
+use Scheduler\Fundation\Response\DelayResponse;
+use Scheduler\Fundation\Response\FailResponse;
+use Scheduler\Fundation\Response\FatalResponse;
+use Scheduler\Fundation\Response\OkResponse;
+use Scheduler\Fundation\Request;
+use Scheduler\Fundation\Response\Response;
 use Scheduler\Exception\InvalidCallException;
 
 /**

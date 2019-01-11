@@ -2,7 +2,7 @@
 
 namespace Scheduler\Server\Coroutine;
 
-use Scheduler\Infrastructure\Logger;
+use Scheduler\Fundation\Logger;
 use Scheduler\Workflow\Node;
 use \Swoole\Coroutine as co;
 use Scheduler\Context\CContext as Context;

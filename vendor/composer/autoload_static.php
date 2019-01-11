@@ -10,6 +10,7 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'bd9634f2d41831496de0d3dfe4c94881' => __DIR__ . '/..' . '/symfony/polyfill-php56/bootstrap.php',
         '045cd5d476702c3529ef3e1b9f615e70' => __DIR__ . '/..' . '/swlib/http/src/functions.php',
         '2c102faa651ef8ea5874edb585946bce' => __DIR__ . '/..' . '/swiftmailer/swiftmailer/lib/swift_required.php',
+        '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => __DIR__ . '/..' . '/swlib/saber/src/include/functions.php',
         'b33e3d135e5d9e47d845c576147bda89' => __DIR__ . '/..' . '/php-di/php-di/src/functions.php',
     );
@@ -19,11 +20,16 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             'Symfony\\Polyfill\\Util\\' => 22,
             'Symfony\\Polyfill\\Php56\\' => 23,
+            'Symfony\\Polyfill\\Ctype\\' => 23,
             'Swlib\\Util\\' => 11,
             'Swlib\\Saber\\' => 12,
             'Swlib\\Http\\' => 11,
             'SuperClosure\\' => 13,
             'Scheduler\\' => 10,
+        ),
+        'R' => 
+        array (
+            'Ramsey\\Uuid\\' => 12,
         ),
         'P' => 
         array (
@@ -64,6 +70,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php56',
         ),
+        'Symfony\\Polyfill\\Ctype\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
+        ),
         'Swlib\\Util\\' => 
         array (
             0 => __DIR__ . '/..' . '/swlib/util/src',
@@ -83,6 +93,10 @@ class ComposerStaticInitc574d965ab6ccadf27444802ddafc77b
         'Scheduler\\' => 
         array (
             0 => __DIR__ . '/../..' . '/src/Lib',
+        ),
+        'Ramsey\\Uuid\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/ramsey/uuid/src',
         ),
         'Psr\\Log\\' => 
         array (

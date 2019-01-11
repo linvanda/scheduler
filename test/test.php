@@ -27,94 +27,47 @@ require(ROOT_PATH . '/vendor/autoload.php');
 co::set([
     'log_level' => SWOOLE_LOG_ERROR
 ]);
-//
-//co::create(function () {
-//   $mysql = new Swoole\Coroutine\MySQL();
-//   $conn = $mysql->connect([
-//       'host' => '192.168.85.135',
-//       'port' => 3306,
-//       'user' => 'root',
-//       'password' => 'weicheche',
-//       'database' => 'weicheche',
-//       'timeout' => 3,
-//       'charset' => 'utf8',
-////       'fetch_mode' => true,
-//   ]);
-//
-//    $builder = new \Scheduler\Infrastructure\MySQL\Builder();
-//
-//    $v = $builder
-//        ->delete('wei_sl_test')
-//        ->where(['id' => 34])
-//        ->compile();
-//
-//    var_export($v);
-//    echo "\n";
-//
-//    $res = $mysql->prepare($v[0]);
-//
-//    $res = $res->execute($v[1]);
-//
+
+function f(Swoole\Coroutine\MySQL $mysql)
+{
+    $st = $mysql->prepare('select * from wei_users where uid=?');
+    $res = $st->execute([102]);
+
+    return $res;
+}
+
+
+
+class A
+{
+    private $name;
+
+    public function __construct(string $name = '')
+    {
+        $this->name = $name;
+    }
+
+    public function __destruct()
+    {
+//        echo "destr===\n";
+    }
+}
+
+$n = new A("san");
+$m = new A('san');
+
+
+
+
+
+co::create(function () {
+   $mysql = new \Scheduler\Fundation\MySQL\CoConnector('192.168.85.135', 'root', 'weicheche', 'weicheche');
+   $res2 = $mysql->query("select `begin` from wei_sl_test");
+   var_export($res2);
+
+
+
 //    echo "err:{$mysql->error};result:".print_r($res, true)."\n";
-//});
+});
 
-//
-//$servername = "192.168.85.135";
-//$username = "root";
-//$password = "weicheche";
-//$dbname = "weicheche";
-//
-//// 创建链接
-//$conn = new mysqli($servername, $username, $password, $dbname);
-//// 检查链接
-//if ($conn->connect_error) {
-//    die("连接失败: " . $conn->connect_error);
-//}
-//
-//$sql = "insert into wei_sl_test(nickname) values('阿法===r');insert into wei_sl_test(nickname) values('阿法===r');select * from  wei_sl_test";
-//
-//if ($conn->multi_query($sql) === TRUE) {
-//    echo "新记录插入成功";
-//} else {
-//    echo "Error: " . $sql . "<br>" . $conn->error;
-//}
-//
-//$conn->close();
 
-trait A
-{
-    private $name = 'AAA';
-
-    public function say()
-    {
-        return $this;
-    }
-
-    protected function w()
-    {
-        echo "www";
-    }
-
-    private function t()
-    {
-        echo 'tttt';
-    }
-}
-
-class B
-{
-    use A;
-
-    public function bbb()
-    {
-        echo $this->name;
-    }
-
-    public function def($name = '')
-    {
-        echo func_get_arg(0);
-    }
-}
-
-$b = new B;
-$b->def('dfd');

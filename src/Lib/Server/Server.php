@@ -2,10 +2,10 @@
 
 namespace Scheduler\Server;
 
-use Scheduler\Infrastructure\Container;
-use Scheduler\Infrastructure\Logger;
-use Scheduler\Infrastructure\LoggerCollector;
-use Scheduler\Infrastructure\StatsCollector;
+use Scheduler\Fundation\Container;
+use Scheduler\Fundation\Logger;
+use Scheduler\Fundation\LoggerCollector;
+use Scheduler\Fundation\StatsCollector;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Http\Request;
 use Swoole\Http\Response;

@@ -2,10 +2,10 @@
 
 namespace Scheduler\Workflow;
 
-use Scheduler\Infrastructure\Logger;
+use Scheduler\Fundation\Logger;
 use Scheduler\Utils\Config;
 use Swoole\Coroutine\Channel;
-use Scheduler\Infrastructure\Request;
+use Scheduler\Fundation\Request;
 use Swoole\Coroutine as co;
 
 /**

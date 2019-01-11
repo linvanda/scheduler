@@ -3,11 +3,11 @@
 namespace Scheduler\Workflow;
 
 use Scheduler\Controller;
-use Scheduler\Infrastructure\Logger;
-use Scheduler\Infrastructure\Response\FatalResponse;
-use Scheduler\Infrastructure\Request;
-use Scheduler\Infrastructure\Response\NoneResponse;
-use Scheduler\Infrastructure\Response\Response;
+use Scheduler\Fundation\Logger;
+use Scheduler\Fundation\Response\FatalResponse;
+use Scheduler\Fundation\Request;
+use Scheduler\Fundation\Response\NoneResponse;
+use Scheduler\Fundation\Response\Response;
 use Scheduler\Exception\InvalidResponseException;
 
 /**
@@ -84,7 +84,7 @@ class Node
 
     /**
      * 获取节点的执行结果，如果未执行，则返回 NoneResponse
-     * @return \Scheduler\Infrastructure\Response\Response
+     * @return \Scheduler\Fundation\Response\Response
      */
     public function response()
     {

@@ -2,8 +2,8 @@
 
 namespace Scheduler\Workflow;
 
-use Scheduler\Infrastructure\Logger;
-use Scheduler\Infrastructure\Request;
+use Scheduler\Fundation\Logger;
+use Scheduler\Fundation\Request;
 use Scheduler\Exception\ClassNotFoundException;
 use Scheduler\Exception\InvalidConfigException;
 use Scheduler\Exception\RunException;
