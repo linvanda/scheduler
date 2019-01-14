@@ -41,20 +41,29 @@ function f(Swoole\Coroutine\MySQL $mysql)
 class A
 {
     private $name;
+    public $age;
 
     public function __construct(string $name = '')
     {
         $this->name = $name;
     }
 
-    public function __destruct()
+    public function f()
     {
-//        echo "destr===\n";
+        return $this->age = 452;
+    }
+
+    public function c()
+    {
+        return$this->age;
     }
 }
 
 $n = new A("san");
-$m = new A('san');
+
+echo $n->f();
+echo "==".$n->c();
+exit;
 
 
 

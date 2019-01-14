@@ -159,9 +159,7 @@ class Transaction
             return $mdl;
         }
 
-        $this->model = $model === 'read' ? 'read' : 'write';
-
-        return $this->model;
+        return $this->model = $model === 'read' ? 'read' : 'write';
     }
 
     /**
@@ -195,9 +193,7 @@ class Transaction
             return true;
         }
 
-        $result = $this->getConnector()->query(...array_shift($this->commandPool));
-
-        return $result;
+        return $this->getConnector()->query(...array_shift($this->commandPool));
     }
 
     /**
@@ -207,10 +203,6 @@ class Transaction
      */
     private function getConnector()
     {
-        if ($this->connector) {
-            return $this->connector;
-        }
-
-        return $this->pool->getConnector($this->model());
+        return $this->connector ?: ($this->connector = $this->pool->getConnector($this->model()));
     }
 }
