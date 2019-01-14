@@ -99,24 +99,17 @@ class CoPool implements IPool
     public function pushConnector(IConnector $connector): bool
     {
         $connInfo = $this->connectInfo($connector);
+        $pool = $this->getPool($connInfo->type);
 
         // 先改变状态
         $connInfo && $connInfo->status = ConnectorInfo::STATUS_IDLE;
 
-        // 健康状况检查
-        if (!$this->checkHealth($connInfo)) {
+        if ($pool->isFull() || !$this->isHealthy($connInfo)) {
             return $this->closeConnector($connector);
         }
 
-        $pool = $this->getPool($connInfo->type);
-
-        if (!$pool->isFull()) {
-            $connInfo->pushTime = time();
-            return $pool->push($connector);
-        }
-
-        // 连接池满了，关闭
-        return $this->closeConnector($connector);
+        $connInfo->pushTime = time();
+        return $pool->push($connector);
     }
 
     protected function closeConnector(IConnector $connector)
@@ -185,7 +178,7 @@ class CoPool implements IPool
      * @param ConnectorInfo $connectorInfo
      * @return bool
      */
-    protected function checkHealth(ConnectorInfo $connectorInfo): bool
+    protected function isHealthy(ConnectorInfo $connectorInfo): bool
     {
         if (!$connectorInfo) {
             return false;
