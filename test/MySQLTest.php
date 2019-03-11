@@ -21,14 +21,21 @@ define('ENV_PRODUCTION', 'production');
 define('ENV', 'dev');
 require(ROOT_PATH . '/vendor/autoload.php');
 
-go(function () {
-    // 实际使用中此处采用服务容器提供 Query 对象
-    $pool = \Scheduler\Fundation\MySQL\CoPool::instance(5);
-    $transaction = new \Scheduler\Fundation\MySQL\Transaction($pool);
-    $query = new \Scheduler\Fundation\MySQL\Query($transaction);
+// 实际使用中此处采用服务容器提供 Query 对象
+$pool = \Scheduler\Fundation\MySQL\CoPool::instance(3);
+$transaction = new \Scheduler\Fundation\MySQL\Transaction($pool);
+$query = new \Scheduler\Fundation\MySQL\Query($transaction);
 
-    $result = $query->select(['phone', 'uid'])->from('wei_users')->where(['uid'=>93])->one();
-    var_export($pool->count());
+go(function () use ($query, $pool) {
+    // 模拟10次查询，每次耗时3s
+    for ($i = 0; $i < 10; $i++) {
+        go(function () use ($query, $pool) {
+            $result = $query->execute('select sleep(3)');
+            echo "query done\n";
+            var_export($pool->count());
+        });
+    }
+
 //    $pool->close();
 });
 

@@ -34,10 +34,6 @@ class CoPool implements IPool
      */
     protected function __construct(int $size, int $maxSleepTime = 600, int $maxExecCount = 1000)
     {
-        if (co::getuid() < 0) {
-            throw new \Exception("请在协程环境中使用 MySQL 协程连接池");
-        }
-
         $this->readPool = new co\Channel($size);
         $this->writePool = new co\Channel($size);
         $this->maxSleepTime = $maxSleepTime;
@@ -173,6 +169,7 @@ class CoPool implements IPool
             $config = $config['write'] && is_array($config['write']) ? $config['write'] : $conf;
         }
 
+        // 注意在此处创建连接时不能自动连接，因为此时 $this->connectNum 的值还没有累加，而数据库连接会导致协程让出，从而导致计数错误
         $conn = new CoConnector(
             $config['host'],
             $config['user'],
@@ -186,6 +183,9 @@ class CoPool implements IPool
         if ($conn) {
             $this->connectNum++;
             $this->connectsInfo[$this->getObjectId($conn)] = new ConnectorInfo($conn, $type);
+
+            // 建立数据库连接
+            $conn->connect();
         }
 
         return $conn;

@@ -17,6 +17,7 @@ interface IConnector
      * @param int $port
      * @param int $timeout
      * @param string $charset
+     * @param bool @authConnect 是否自动连接
      */
     public function __construct(
         string $host,
@@ -25,7 +26,8 @@ interface IConnector
         string $database,
         int $port = 3306,
         int $timeout = 3,
-        string $charset = 'utf8'
+        string $charset = 'utf8',
+        bool $autoConnect = false
     );
 
     /**
