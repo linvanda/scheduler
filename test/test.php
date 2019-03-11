@@ -28,51 +28,11 @@ co::set([
     'log_level' => SWOOLE_LOG_ERROR
 ]);
 
-function f(Swoole\Coroutine\MySQL $mysql)
-{
-    $st = $mysql->prepare('select * from wei_users where uid=?');
-    $res = $st->execute([102]);
-
-    return $res;
-}
-
-
-
-class A
-{
-    private $name;
-    public $age;
-
-    public function __construct(string $name = '')
-    {
-        $this->name = $name;
-    }
-
-    public function f()
-    {
-        return $this->age = 452;
-    }
-
-    public function c()
-    {
-        return$this->age;
-    }
-}
-
-$n = new A("san");
-
-echo $n->f();
-echo "==".$n->c();
-exit;
-
-
-
-
-
 co::create(function () {
    $mysql = new \Scheduler\Fundation\MySQL\CoConnector('192.168.85.135', 'root', 'weicheche', 'weicheche');
-   $res2 = $mysql->query("select `begin` from wei_sl_test");
-   var_export($res2);
+//   $mysql->query("select sleep(8)");
+   $res2 = $mysql->query("insert into wei_sl_test(nickname) values('talino')");
+   var_export($mysql->insertId());
 
 
 

@@ -28,6 +28,7 @@ Trait Builder
     private $havingParams = [];
     private $valuesParams = [];
     private $setParams = [];
+    private $rawSqlInfo = [];
 
     /**
      * 只能调用一次
@@ -214,7 +215,7 @@ Trait Builder
     {
         $limit = intval($limit);
         $offset = intval($offset);
-        $this->limit = "limit $limit,$offset";
+        $this->limit = "limit $offset,$limit";
 
         return $this;
     }
@@ -351,6 +352,15 @@ Trait Builder
     }
 
     /**
+     * 最后一次编译出的原始 SQL
+     * @return array
+     */
+    public function rawSql(): array
+    {
+        return $this->rawSqlInfo;
+    }
+
+    /**
      * 预处理 SQL
      * @param string $sql 格式：select * from t_name where uid=:uid
      * @param array $params 格式：['uid' => $uid]
@@ -407,11 +417,11 @@ Trait Builder
 
         $method = 'compile' . ucfirst($this->type);
         if (method_exists($this, $method)) {
-            $result = $this->$method();
+            $this->rawSqlInfo = $this->$method();
             if ($reset) {
                 $this->reset();
             }
-            return $result;
+            return $this->rawSqlInfo;
         }
 
         return ['', []];

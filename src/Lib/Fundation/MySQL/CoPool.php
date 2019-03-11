@@ -142,14 +142,14 @@ class CoPool implements IPool
      */
     protected function createConnector($type = 'write'): IConnector
     {
-        $config = Config::get("mysql");
+        $conf = Config::get("mysql");
 
-        if (!$config) {
+        if (!$conf) {
             throw new \Exception("未找到 MySQL 配置");
         }
 
-        if (!($config = $config[$type])) {
-            $config = $config['write'] && is_array($config['write']) ? $config['write'] : $config;
+        if (!($config = $conf[$type])) {
+            $config = $config['write'] && is_array($config['write']) ? $config['write'] : $conf;
         }
 
         $conn = new CoConnector(
