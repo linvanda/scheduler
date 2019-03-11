@@ -45,10 +45,23 @@ class CoPool implements IPool
         $this->connectNum = 0;
     }
 
-    public function __destruct()
+    /**
+     * 关闭连接池
+     * @return bool
+     */
+    public function close(): bool
     {
-        // 销毁所有的连接对象
+        // 关闭通道中所有的连接。等待5ms为的是防止还有等待push的排队协程
+        while ($conn = $this->readPool->pop(0.005)) {
+            $this->closeConnector($conn);
+        }
+        while ($conn = $this->writePool->pop(0.005)) {
+            $this->closeConnector($conn);
+        }
+        $this->readPool->close();
+        $this->writePool->close();
 
+        return true;
     }
 
     public static function instance(int $size, int $maxSleepTime = 600, int $maxExecCount = 1000): IPool
@@ -81,7 +94,7 @@ class CoPool implements IPool
             return $conn;
         }
 
-        $conn = $pool->pop(10);
+        $conn = $pool->pop(5);
 
         done:
         $connectInfo = $this->connectInfo($conn);
@@ -110,6 +123,14 @@ class CoPool implements IPool
 
         $connInfo->pushTime = time();
         return $pool->push($connector);
+    }
+
+    public function count(): array
+    {
+        return [
+            'read' => $this->readPool->length(),
+            'write' => $this->writePool->length()
+        ];
     }
 
     protected function closeConnector(IConnector $connector)

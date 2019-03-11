@@ -23,4 +23,16 @@ namespace Scheduler\Fundation\MySQL;
       * @return bool
       */
      public function pushConnector(IConnector $connector): bool;
+
+     /**
+      * 连接池中连接数
+      * @return array ['read' => 3, 'write' => 3]
+      */
+     public function count(): array;
+
+     /**
+      * 关闭连接池
+      * @return bool
+      */
+     public function close(): bool;
  }

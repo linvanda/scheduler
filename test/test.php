@@ -33,10 +33,9 @@ co::create(function () {
 //   $mysql->query("select sleep(8)");
    $res2 = $mysql->query("insert into wei_sl_test(nickname) values('talino')");
    var_export($mysql->insertId());
+    $channel = new co\Channel(4);
+    $channel->push($mysql);
 
-
-
-//    echo "err:{$mysql->error};result:".print_r($res, true)."\n";
 });
 
 

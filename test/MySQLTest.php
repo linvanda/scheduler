@@ -4,6 +4,8 @@
  * 命令行执行的入口程序
  */
 
+use \Swoole\Coroutine as co;
+
 error_reporting(E_ALL ^ E_NOTICE);
 
 // 常量定义
@@ -26,6 +28,7 @@ go(function () {
     $query = new \Scheduler\Fundation\MySQL\Query($transaction);
 
     $result = $query->select(['phone', 'uid'])->from('wei_users')->where(['uid'=>93])->one();
-    var_export($result);
+    var_export($pool->count());
+//    $pool->close();
 });
 
