@@ -2,6 +2,9 @@
 
 namespace Scheduler\Fundation\MySQL;
 
+use \Swoole\Coroutine as co;
+use \Scheduler\Fundation\Logger;
+
 /**
  * 事务管理器
  * 注意：事务开启直到提交/回滚的过程中会一直占用某个 IConnector 实例，如果有很多长事务，则会很快耗完连接池资源
@@ -11,21 +14,15 @@ namespace Scheduler\Fundation\MySQL;
 class Transaction
 {
     private $pool;
-    private $isRunning;
+    // 以下属性都需要针对每个协程单独记录
+    private $isRunning = [];
     private $commandPool = [];
-    private $model;// 读模式还是写模式 write/read
-    private $connector;
+    private $model = [];// 读模式还是写模式 write/read
+    private $connector = [];
 
     public function __construct(IPool $pool)
     {
         $this->pool = $pool;
-    }
-
-    public function __destruct()
-    {
-        if ($this->isRunning) {
-            $this->commit();
-        }
     }
 
     /**
@@ -38,19 +35,19 @@ class Transaction
     public function begin(string $model = 'write', bool $isImplicit = false): bool
     {
         // 如果事务已经开启了，则直接返回
-        if ($this->isRunning) {
+        if ($this->isRunning()) {
             return true;
         }
 
-        $this->isRunning = true;
-        $this->model = $model;
+        $this->isRunning(1);
+        $this->model[co::getuid()] = $model;
 
-        // 开启事务时需 handle 一个 Connector，直到事务提交
-        if (!($this->connector = $this->getConnector())) {
+        // 开启事务时需从连接池获取 Connector
+        if (!$this->getConnector()) {
             return false;
         }
 
-        return $isImplicit || $this->command('begin');
+        return $isImplicit || $this->connector()->begin();
     }
 
     /**
@@ -66,16 +63,19 @@ class Transaction
             return false;
         }
 
-        // 如果当前不在事务中，则开启一个事务（隐式事务）
-        $isImplicit = !$this->isRunning;
+        $isImplicit = !$this->isRunning();
 
+        // 开启事务
         if ($isImplicit && !$this->begin($this->model([[$preSql, $params]]), $isImplicit)) {
             return false;
         }
 
-        $this->commandPool[] = [$preSql, $params];
+        // 执行 SQL
+        Logger::debug("SQL(cid:".co::getuid()."):". print_r(['sql' => $preSql, 'params' => $params], true));
+        $this->commandPool([$preSql, $params]);
         $result = $this->exec();
 
+        // 提交事务
         if ($isImplicit && !$this->commit($isImplicit)) {
             return false;
         }
@@ -90,20 +90,22 @@ class Transaction
      */
     public function commit(bool $isImplicit = false): bool
     {
-        if (!$this->isRunning) {
+        if (!$this->isRunning()) {
             return true;
         }
 
         $result = true;
         if (!$isImplicit) {
-            $result = $this->command('commit');
+            $result = $this->connector()->commit();
 
             if ($result === false) {
                 // 执行失败，试图回滚
                 $this->rollback();
+                return false;
             }
         }
 
+        // 释放事务占用的资源
         $this->releaseTransResource();
 
         return $result;
@@ -111,13 +113,13 @@ class Transaction
 
     public function rollback(): bool
     {
-        if (!$this->isRunning) {
+        if (!$this->isRunning()) {
             return true;
         }
 
         // 回滚前指令池中的指令一律清空
-        $this->commandPool = [];
-        $result = $this->command('rollback');
+        $this->commandPool[co::getuid()] = [];
+        $result = $this->connector()->rollback();
 
         $this->releaseTransResource();
 
@@ -132,14 +134,14 @@ class Transaction
     public function model($model = null): string
     {
         // 事务处于开启状态时不允许切换运行模式
-        if ($this->isRunning) {
-            return $this->model;
+        if ($this->isRunning()) {
+            return $this->model[co::getuid()];
         }
 
         if ($model === null || is_array($model)) {
             // 根据指令池内容计算运行模式(只要有一条写指令则是 write 模式)
             $mdl = 'read';
-            foreach (($model ?: $this->commandPool) as $command) {
+            foreach (($model ?: $this->commandPool()) as $command) {
                 $sqls = array_map(
                     function ($item) {
                         return trim($item);
@@ -159,7 +161,7 @@ class Transaction
             return $mdl;
         }
 
-        return $this->model = $model === 'read' ? 'read' : 'write';
+        return $this->model[co::getuid()] = $model === 'read' ? 'read' : 'write';
     }
 
     /**
@@ -167,18 +169,21 @@ class Transaction
      */
     public function connector()
     {
-        return $this->connector;
+        return $this->connector[co::getuid()];
     }
 
     /**
-     * 释放事务资源
+     * 释放当前协程的事务资源
      */
     private function releaseTransResource()
     {
-        $this->isRunning = false;
-        $this->model = null;
-        $this->pool->pushConnector($this->connector);
-        $this->connector = null;
+        $cid = co::getuid();
+        $this->isRunning[$cid] = 0;
+        $this->commandPool[$cid] = [];
+        // 归还连接资源
+        $this->pool->pushConnector($this->connector[$cid]);
+        unset($this->connector[$cid]);
+        unset($this->model[$cid]);
     }
 
     /**
@@ -189,11 +194,11 @@ class Transaction
     private function exec()
     {
         // 执行指令的前提是在事务开启模式下且指令池中有指令
-        if (!$this->commandPool || !$this->isRunning) {
+        if (!$this->commandPool() || !$this->isRunning()) {
             return true;
         }
 
-        return $this->getConnector()->query(...array_shift($this->commandPool));
+        return $this->getConnector()->query(...$this->commandPool(null, true));
     }
 
     /**
@@ -203,6 +208,40 @@ class Transaction
      */
     private function getConnector()
     {
-        return $this->connector ?: ($this->connector = $this->pool->getConnector($this->model()));
+        $cid = co::getuid();
+
+        if ($this->connector[$cid]) {
+            return $this->connector[$cid];
+        }
+
+        return ($this->connector[$cid] = $this->pool->getConnector($this->model()));
+    }
+
+    private function isRunning($val = null)
+    {
+        if (isset($val)) {
+            $this->isRunning[co::getuid()] = $val;
+        } else {
+            return $this->isRunning[co::getuid()];
+        }
+    }
+
+    private function commandPool($sqlArr = null, $pop = false)
+    {
+        $cid = co::getuid();
+
+        if (!isset($this->commandPool[$cid])) {
+            $this->commandPool[$cid] = [];
+        }
+
+        if ($sqlArr) {
+            $this->commandPool[$cid][] = $sqlArr;
+        } else {
+            if ($pop) {
+                return array_shift($this->commandPool[$cid]);
+            }
+
+            return $this->commandPool[$cid];
+        }
     }
 }

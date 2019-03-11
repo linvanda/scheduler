@@ -127,26 +127,6 @@ class Query
     }
 
     /**
-     * 最后插入的记录 id。
-     * 注意：批量插入取的是插入的第一行记录的 id
-     * @return int
-     */
-    public function lastInsertId(): int
-    {
-        return $this->transaction->connector()->insertId();
-    }
-
-    public function error(): string
-    {
-        return $this->transaction->connector()->lastError();
-    }
-
-    public function errorNo(): int
-    {
-        return $this->transaction->connector()->lastErrorNo();
-    }
-
-    /**
      * 执行 SQL
      * 有两种方式：
      *  1. 调此方法时传入相关参数；

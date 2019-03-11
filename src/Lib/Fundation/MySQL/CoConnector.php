@@ -124,6 +124,21 @@ class CoConnector implements IConnector
         return $result;
     }
 
+    public function begin(): bool
+    {
+        return $this->mysql->begin();
+    }
+
+    public function commit(): bool
+    {
+        return $this->mysql->commit();
+    }
+
+    public function rollback(): bool
+    {
+        return $this->mysql->rollback();
+    }
+
     /**
      * SQL 执行影响的行数，针对命令型 SQL
      * @return int

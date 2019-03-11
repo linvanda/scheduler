@@ -4,6 +4,7 @@ namespace Scheduler\Fundation\MySQL;
 
 use Swoole\Coroutine as co;
 use Scheduler\Utils\Config;
+use Scheduler\Fundation\Logger;
 
 /**
  * 协程版连接池
@@ -24,6 +25,7 @@ class CoPool implements IPool
     protected $connectNum;
     protected $maxSleepTime;
     protected $maxExecCount;
+    protected $available;
 
     /**
      * CoPool constructor.
@@ -39,6 +41,7 @@ class CoPool implements IPool
         $this->maxSleepTime = $maxSleepTime;
         $this->maxExecCount = $maxExecCount;
         $this->connectNum = 0;
+        $this->available = true;
     }
 
     /**
@@ -47,6 +50,7 @@ class CoPool implements IPool
      */
     public function close(): bool
     {
+        $this->available = false;
         // 关闭通道中所有的连接。等待5ms为的是防止还有等待push的排队协程
         while ($conn = $this->readPool->pop(0.005)) {
             $this->closeConnector($conn);
@@ -72,14 +76,19 @@ class CoPool implements IPool
     /**
      * 从连接池中获取 MySQL 连接对象
      * @param string $type
-     * @return IConnector
+     * @return IConnector|bool
      * @throws \Exception
      * @throws \Scheduler\Exception\FileNotFoundException
      */
     public function getConnector(string $type = 'write'): IConnector
     {
+        if (!$this->available) {
+            return false;
+        }
+
         $pool = $this->getPool($type);
-        if ($pool->isEmpty() && $this->connectNum < $pool->capacity) {
+        if ($pool->isEmpty()) {
+            Logger::debug("创建新连接对象");
             // 创建新连接
             $conn = $this->createConnector($type);
 
@@ -90,6 +99,7 @@ class CoPool implements IPool
             return $conn;
         }
 
+        Logger::debug("从连接池获取连接对象");
         $conn = $pool->pop(5);
 
         done:
@@ -107,16 +117,21 @@ class CoPool implements IPool
      */
     public function pushConnector(IConnector $connector): bool
     {
+        if (!$connector) {
+            return true;
+        }
+
         $connInfo = $this->connectInfo($connector);
         $pool = $this->getPool($connInfo->type);
 
         // 先改变状态
         $connInfo && $connInfo->status = ConnectorInfo::STATUS_IDLE;
 
-        if ($pool->isFull() || !$this->isHealthy($connInfo)) {
+        if (!$this->available || $pool->isFull() || !$this->isHealthy($connInfo)) {
             return $this->closeConnector($connector);
         }
 
+        Logger::debug("push连接对象");
         $connInfo->pushTime = time();
         return $pool->push($connector);
     }
@@ -131,6 +146,11 @@ class CoPool implements IPool
 
     protected function closeConnector(IConnector $connector)
     {
+        if (!$connector) {
+            return true;
+        }
+
+        Logger::debug("关闭连接对象");
         $connector->close();
         $this->connectNum--;
         unset($this->connectsInfo[$this->getObjectId($connector)]);
@@ -169,7 +189,6 @@ class CoPool implements IPool
             $config = $config['write'] && is_array($config['write']) ? $config['write'] : $conf;
         }
 
-        // 注意在此处创建连接时不能自动连接，因为此时 $this->connectNum 的值还没有累加，而数据库连接会导致协程让出，从而导致计数错误
         $conn = new CoConnector(
             $config['host'],
             $config['user'],

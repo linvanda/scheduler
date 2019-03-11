@@ -52,6 +52,24 @@ interface IConnector
     public function query(string $sql, array $params, int $timeout = 180);
 
     /**
+     * 开启事务
+     * @return bool
+     */
+    public function begin(): bool;
+
+    /**
+     * 提交事务
+     * @return bool
+     */
+    public function commit(): bool;
+
+    /**
+     * 回滚事务
+     * @return bool
+     */
+    public function rollback(): bool;
+
+    /**
      * SQL 执行影响的行数，针对命令型 SQL
      * @return int
      */

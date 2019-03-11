@@ -12,7 +12,7 @@ namespace Scheduler\Fundation\MySQL;
      /**
       * 从连接池中获取 MySQL 连接对象
       * @param string $type
-      * @return IConnector
+      * @return IConnector|bool
       * @throws \Exception
       * @throws \Scheduler\Exception\FileNotFoundException
       */
