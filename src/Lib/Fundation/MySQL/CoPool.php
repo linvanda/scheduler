@@ -14,6 +14,10 @@ use Scheduler\Fundation\Logger;
  */
 class CoPool implements IPool
 {
+    protected const STATUS_OK = 1;
+    protected const STATUS_UNAVAILABLE = 2;
+    protected const STATUS_CLOSED = 3;
+
     protected static $instance;
 
     /** @var co\Channel */
@@ -25,7 +29,7 @@ class CoPool implements IPool
     protected $connectNum;
     protected $maxSleepTime;
     protected $maxExecCount;
-    protected $available;
+    protected $status;
 
     /**
      * CoPool constructor.
@@ -41,7 +45,7 @@ class CoPool implements IPool
         $this->maxSleepTime = $maxSleepTime;
         $this->maxExecCount = $maxExecCount;
         $this->connectNum = 0;
-        $this->available = true;
+        $this->status = self::STATUS_OK;
     }
 
     /**
@@ -50,7 +54,8 @@ class CoPool implements IPool
      */
     public function close(): bool
     {
-        $this->available = false;
+        $this->status = self::STATUS_CLOSED;
+
         // 关闭通道中所有的连接。等待5ms为的是防止还有等待push的排队协程
         while ($conn = $this->readPool->pop(0.005)) {
             $this->closeConnector($conn);
@@ -82,7 +87,7 @@ class CoPool implements IPool
      */
     public function getConnector(string $type = 'write'): IConnector
     {
-        if (!$this->available) {
+        if (!$this->isOk()) {
             return false;
         }
 
@@ -127,7 +132,7 @@ class CoPool implements IPool
         // 先改变状态
         $connInfo && $connInfo->status = ConnectorInfo::STATUS_IDLE;
 
-        if (!$this->available || $pool->isFull() || !$this->isHealthy($connInfo)) {
+        if (!$this->isOk() || $pool->isFull() || !$this->isHealthy($connInfo)) {
             return $this->closeConnector($connector);
         }
 
@@ -156,6 +161,11 @@ class CoPool implements IPool
         unset($this->connectsInfo[$this->getObjectId($connector)]);
 
         return true;
+    }
+
+    protected function isOk()
+    {
+        return $this->status == self::STATUS_OK;
     }
 
     /**

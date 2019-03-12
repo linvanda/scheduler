@@ -83,16 +83,16 @@ $query = new \Scheduler\Fundation\MySQL\Query($transaction);
 //});
 
 // 事务
-go(function () {
-    $pool = \Scheduler\Fundation\MySQL\CoPool::instance(3); // 连接池大小为3
-    $transaction = new \Scheduler\Fundation\MySQL\Transaction($pool);
-    $query = new \Scheduler\Fundation\MySQL\Query($transaction);
-
-    $query->begin();
-    $query->insert('wei_sl_test')->values(['nickname' => '山子1', 'name' => '张山'])->execute();
-    $query->insert('wei_sl_test')->values(['nickname' => '山子2', 'name' => '张山'])->execute();
-    $query->insert('wei_sl_test')->values(['nickname' => '山子3', 'name' => '张山'])->execute();
-    $query->commit();
-
-    var_export($query->select('*')->from('wei_sl_test')->orderBy('id desc')->limit(10)->list());
-});
+//go(function () {
+//    $pool = \Scheduler\Fundation\MySQL\CoPool::instance(3); // 连接池大小为3
+//    $transaction = new \Scheduler\Fundation\MySQL\Transaction($pool);
+//    $query = new \Scheduler\Fundation\MySQL\Query($transaction);
+//
+//    $query->begin();
+//    $query->insert('wei_sl_test')->values(['nickname' => '山子1', 'name' => '张山'])->execute();
+//    $query->insert('wei_sl_test')->values(['nickname' => '山子2', 'name' => '张山'])->execute();
+//    $query->insert('wei_sl_test')->values(['nickname' => '山子3', 'name' => '张山'])->execute();
+//    $query->commit();
+//
+//    var_export($query->select('*')->from('wei_sl_test')->orderBy('id desc')->limit(10)->list());
+//});
