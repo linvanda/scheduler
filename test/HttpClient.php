@@ -4,6 +4,8 @@ use Swlib\SaberGM;
 
 require_once('../vendor/autoload.php');
 
+error_reporting(E_ERROR);
+
 Swoole\Coroutine::set(['log_level' => SWOOLE_LOG_ERROR]);
 
 $workflow = $argv[1] ?: 'test';

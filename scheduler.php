@@ -4,7 +4,7 @@
  * 操作脚本（入口程序）
  */
 
-use Scheduler\Infrastructure\Container;
+use Scheduler\Fundation\Container;
 use Scheduler\Utils\Config;
 
 // PHP 版本检测

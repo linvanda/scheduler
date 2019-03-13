@@ -6,11 +6,11 @@
 return [
     // 失败重试次数，节点可覆盖。不超过10
     // 次数与时间的关系：[1 => 5, 2 => 15, 3 => 30, 4 => 180, 5 => 600, 6 => 1800, 7 => 3600, 8 => 10800, 9 => 18000, 10 => 36000]
-    'max_retry_num' => 6,
+    'max_retry_num' => 2,
     // 最多允许延迟执行多少次，可被节点配置覆盖
-    'max_delay_num' => 5,
+    'max_delay_num' => 3,
     // 当节点需要延迟执行时，延迟的秒数，可在节点配置中覆盖
-    'delay' => 5,
+    'delay' => 4,
     // 每个节点最长执行时间，单位 s，默认 5min
     'max_node_run_time' => 600,
     // 处理程序类名
@@ -41,9 +41,6 @@ return [
     'nodes' => [
         'step1' =>[
             'action' => 'step1',
-            'max_retry_num' => 3,
-            'max_delay_num' => 2,
-            'delay' => 2,
         ],
         'step2' => [
             'conditions' => [
@@ -54,7 +51,6 @@ return [
             'conditions' => [
                 'step5' => 200,
             ],
-            'delay' => 10,
         ],
         'step4' => [
             'conditions' => [
@@ -63,11 +59,5 @@ return [
         ],
         'step5' => [
         ],
-        'step6' => [
-
-        ],
-        'step7' => [
-
-        ]
     ],
 ];

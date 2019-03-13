@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Scheduler\Controller;
 use Swoole\Coroutine as co;
+use Scheduler\Fundation\Logger;
 
 /**
  * 测试处理程序
@@ -15,56 +16,44 @@ class TestController extends Controller
 {
     public function step1()
     {
-        echo "step1\n";
+        Logger::debug("action step1开始处理请求。需要执行1s");
         co::sleep(1);
-        echo "step1 - 1\n";
+        Logger::debug('action step1执行完成');
 
         return true;
     }
 
     public function step2()
     {
-        echo "step2\n";
+        Logger::debug("action step2开始处理请求。需要执行2s");
         co::sleep(2);
-        echo "step2 - 2\n";
+        Logger::debug('action step2处理完成，失败需要重试');
 
-        return true;
+        return ['code' => 400, 'msg' => '失败需要重试'];
     }
 
     public function step3()
     {
-        echo "step3\n";
+        Logger::debug('action step3 开始处理请求，需要执行3s');
         co::sleep(3);
-        echo "step3 - 3\n";
+        Logger::debug('action step3 处理完成');
 
         return true;
     }
 
     public function step4()
     {
-        echo "step4\n";
+        Logger::debug('action step4开始处理请求，需要执行1s');
         co::sleep(1);
-        echo "step4 - 4\n";
+        Logger::debug('action step4处理完成');
         return true;
     }
 
     public function step5()
     {
-        echo "step5\n";
+        Logger::debug('action step5开始处理请求,需要执行3s');
         co::sleep(3);
-        echo "step5 - 5\n";
-        return true;
-    }
-
-    public function step6()
-    {
-        echo "step6\n";
-        return true;
-    }
-
-    public function step7()
-    {
-        echo "step7\n";
+        Logger::debug('action step5处理完成');
         return true;
     }
 }

@@ -105,7 +105,7 @@ class CoPool implements IPool
         }
 
         Logger::debug("从连接池获取连接对象");
-        $conn = $pool->pop(5);
+        $conn = $pool->pop(2);
 
         done:
         $connectInfo = $this->connectInfo($conn);

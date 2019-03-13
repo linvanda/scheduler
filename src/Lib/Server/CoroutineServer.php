@@ -64,26 +64,6 @@ class CoroutineServer extends Server
     }
 
     /**
-     * 工作进程结束
-     * @param HttpServer $server
-     * @param $workerId
-     */
-    public function onWorkerStop(HttpServer $server, $workerId)
-    {
-        // 销毁进程上下文
-        Context::destroy();
-    }
-
-    /**
-     * @param HttpServer $server
-     * @param $workerId
-     * @throws \Exception
-     */
-    public function onWorkerExit(HttpServer $server, $workerId)
-    {
-    }
-
-    /**
      * 请求到来，创建工作流对象并加入消费队列中
      * @param Request $request
      * @param Response $response
@@ -117,5 +97,25 @@ class CoroutineServer extends Server
             $response->status(500);
             $response->end($e->getMessage());
         }
+    }
+
+    /**
+     * 工作进程结束
+     * @param HttpServer $server
+     * @param $workerId
+     */
+    public function onWorkerStop(HttpServer $server, $workerId)
+    {
+        // 销毁进程上下文
+        Context::destroy();
+    }
+
+    /**
+     * @param HttpServer $server
+     * @param $workerId
+     * @throws \Exception
+     */
+    public function onWorkerExit(HttpServer $server, $workerId)
+    {
     }
 }

@@ -69,7 +69,7 @@ class CoroutineWorkFlow extends WorkFlow
     }
 
     /**
-     * 在独立的协程中执行自节点
+     * 在独立的协程中执行各节点
      * @param Node $node
      */
     protected function runNode(Node $node)

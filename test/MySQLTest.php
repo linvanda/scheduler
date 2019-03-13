@@ -30,33 +30,36 @@ Container::init();
 GContext::init();
 swoole_timer_tick(50, new LoggerCollector());
 
-
 // 实际使用中此处采用服务容器提供 Query 对象
 $pool = \Scheduler\Fundation\MySQL\CoPool::instance(3); // 连接池大小为3
 $transaction = new \Scheduler\Fundation\MySQL\Transaction($pool);
 $query = new \Scheduler\Fundation\MySQL\Query($transaction);
 
-//go(function () use ($query, $pool) {
-//    // 模拟10次查询，每次耗时3s
-//    for ($i = 0; $i < 6; $i++) {
-//        go(function () use ($query, $pool) {
-//            $result = $query->execute('select sleep(3)');
-//            echo "query done\n";
-//            var_export($pool->count());
-//        });
-//        co::sleep(0.4);
-//    }
-//
-//    co::sleep(5);// 此时前面三个连接对象都应该push到连接池了，下面进行的4次连接应该只需要创建一个新的
-//
-//    for ($i = 0; $i < 4; $i++) {
-//        go(function () use ($query, $pool) {
-//            $result = $query->execute('select sleep(1)');
-//            echo "query suc\n";
-//            var_export($pool->count());
-//        });
-//    }
-//});
+/**
+ * 模拟多协程并发查询，并观察连接池使用情况
+ * 模拟的场景是：每0.4s有一个客户端连接进入（新的协程）并触发
+ */
+go(function () use ($query, $pool) {
+    // 模拟10次查询，每次耗时3s
+    for ($i = 0; $i < 6; $i++) {
+        go(function () use ($query, $pool) {
+            $result = $query->execute('select sleep(3)');
+            echo "query done\n";
+            var_export($pool->count());
+        });
+        co::sleep(0.4);
+    }
+
+    co::sleep(5);// 此时前面三个连接对象都应该push到连接池了，下面进行的4次连接应该只需要创建一个新的
+
+    for ($i = 0; $i < 4; $i++) {
+        go(function () use ($query, $pool) {
+            $result = $query->execute('select sleep(1)');
+            echo "query suc\n";
+            var_export($pool->count());
+        });
+    }
+});
 
 // 实际业务演示
 //go(function () {
